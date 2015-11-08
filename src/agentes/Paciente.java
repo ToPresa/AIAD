@@ -8,7 +8,7 @@ public class Paciente{
 	
 	int prioridade; //prioridade para ser atendido
 	String name; //nome do paciente
-	String TipoDoença; //para ser levado ao "departamento" correto, saber o exame a fazer
+	String TipoDoença; // /sintoma/ para ser levado ao "departamento" correto, saber o exame a fazer
 	DateTime  HoraChegada; //hora que chegou ao hospital
 	Vector <Exames> exames;
 		

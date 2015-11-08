@@ -5,13 +5,15 @@ public class Sala {
 	//sala->recurso
 	
 	boolean ocupada;
-	String TipoExame;
+	String TipoExame; //tipo de exame esta sala faz (recurso que tem)
 	Vector<Enfermeiro> enfermeiros;
+	Vector<Exames> exames; //exames para fazer nesta sala
 	
 	public Sala(boolean ocupada, String TipoExame){
 		this.ocupada = ocupada;
 		this.TipoExame = TipoExame;
 		this.enfermeiros = new Vector<Enfermeiro>();
+		this.exames = new Vector<Exames>();
 	}
 	
 	public String getTipoExame() {
@@ -32,5 +34,9 @@ public class Sala {
 	
 	public Vector<Enfermeiro> getEnfermeiros() {
 		return enfermeiros;
+	}	
+	
+	public Vector<Exames> getExames() {
+		return exames;
 	}	
 }

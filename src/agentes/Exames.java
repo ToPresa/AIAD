@@ -1,13 +1,17 @@
 package agentes;
 
+import FIPA.DateTime;
+
 public class Exames {
 	
 	String nomePaciente;
+	DateTime duracao;
 	int resultado; //atribiu um valor dentro de uma escala
 	
-	public Exames(int Resultado, String NomePaciente){
+	public Exames(int Resultado, String NomePaciente, DateTime duracao){
 		this.nomePaciente = NomePaciente;
 		this.resultado = Resultado;
+		this.duracao = duracao;
 	}
 	
 	public String getNomePaciente() {
@@ -24,6 +28,14 @@ public class Exames {
 
 	public void setResultado(int resultado) {
 		this.resultado = resultado;
+	}
+	
+	public DateTime getDuracao() {
+		return duracao;
+	}
+	
+	public void setDuracao(DateTime  duracao) {
+		this.duracao = duracao;
 	}
 	
 }
