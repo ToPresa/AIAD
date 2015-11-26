@@ -15,56 +15,13 @@ import jade.lang.acl.MessageTemplate;
 
 public class AgentePaciente extends Agent{
 	
-	private AgenteHospital hospital = new AgenteHospital();
 	private String sintoma;
 	private AID[] recursos;
-	
-	private String DetSalaPaciente(String[] sintomas) {
 		
-		String sala = "";
-		
-		ArrayList<String> r1=new ArrayList<String>();
-		r1.add("cabeça");
-		r1.add("costas");
-		r1.add("perna");
-		
-		ArrayList<String> r2=new ArrayList<String>();
-		r2.add("braço");
-		r2.add("ombro");
-		r2.add("osso");
-		
-		for(int i=0; i< sintomas.length ;i++) {
-			if(r1.contains(sintomas[i])) {
-				sala = "r1";
-				break;
-			}
-			else if(r2.contains(sintomas[i])) {
-				sala = "r2";
-				break;
-			}
-			else {
-				System.out.println("Não há sala especifica.");
-			}
-		}
-		
-		return sala;
-	}
-	
-	private String  SalaPaciente(String sintomas) {
-		
-		String[] conjuntoSintomas = sintomas.split(";");
-		
-		//for(String s:conjuntoSintomas)
-	    //   System.out.println(s);
-		
-		
-		String sala = DetSalaPaciente(conjuntoSintomas);
-		return sala;
-	}
-	
 	protected void setup() {
 		// Printout a welcome message
 		System.out.println("Bem Vindo Sr/Sra: "+ getAID().getLocalName() + "!");
+		System.out.println("TEMPO: " + System.currentTimeMillis());
 
 		// Obter os sintomas de um paciente como argumento de entrada
 		Object[] args = getArguments();
@@ -77,7 +34,7 @@ public class AgentePaciente extends Agent{
 			//sintoma = SalaPaciente(sintoma);
 						
 			// Schedules a request to Hospital agents every 10s
-			addBehaviour(new TickerBehaviour(this, 10000) {
+			addBehaviour(new TickerBehaviour(this, 5000) {
 				protected void onTick() {
 					System.out.println("A tentar curar: " + sintoma);
 					// Update the list of seller agents
@@ -147,12 +104,11 @@ public class AgentePaciente extends Agent{
 					if (reply.getPerformative() == ACLMessage.PROPOSE) {
 						// This is an offer 
 						String resposta = reply.getContent().toString();
-						//System.out.println("RESPOSTA: "+resposta+ " "+ sintoma + " " + reply.getSender().toString());
-					
+						//System.out.println("RESPOSTA: "+resposta+ " "+ sintoma + "lllll " + reply.getSender().toString());
+						
 								// This is the best offer at present
 						recurso = reply.getSender();
-
-							
+		
 					}
 					repliesCnt++;
 					if (repliesCnt >= recursos.length) {
@@ -184,7 +140,14 @@ public class AgentePaciente extends Agent{
 					// Purchase order reply received
 					if (reply.getPerformative() == ACLMessage.INFORM) {
 						// Purchase successful. We can terminate
+						/*try {
+							Thread.sleep(10000);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}*/
 						System.out.println(sintoma+" tratado com sucesso!");
+						
 						System.out.println("Sintoma: " + sintoma);
 						myAgent.doDelete();
 					}
