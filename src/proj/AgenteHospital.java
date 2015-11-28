@@ -69,9 +69,6 @@ public class AgenteHospital extends Agent {
 				System.out.println("SALA ABERTA: " + sala);
 				criada.setSintomas(sala);
 				listaSala.add(criada);
-				// System.out.println("TAMANHOOOOOOOO: " + listaSala.size());
-				// System.out.println("TAMANHOOOOOOOO CRLL: " +
-				// criada.getSintomas().size());
 				System.out.println(sala + " adicionada!");
 			}
 		});
@@ -86,15 +83,14 @@ public class AgenteHospital extends Agent {
 				String sintoma = msg.getContent();
 				ACLMessage reply = msg.createReply();
 				boolean encontrou = false;
-
+				
 				String[] conjuntoSintomas = sintoma.split(";");
-
+				
+				if(msg.getConversationId() == "marcar-recurso"){
 				for (int i = 0; i < listaSala.size(); i++) {
 					for (int j = 0; j < conjuntoSintomas.length; j++) {
 						if (listaSala.get(i).getSintomas().contains(conjuntoSintomas[j]) && listaSala.get(i).ocupada == false) {
-							// The requested book is available for sale. Reply
-							// with
-							// the price
+							// Existe uma sala que pode tratar aquele sintoma disponivel. Reply
 							
 							encontrou = true;
 							reply.setPerformative(ACLMessage.PROPOSE);
@@ -110,6 +106,18 @@ public class AgenteHospital extends Agent {
 				}
 
 				myAgent.send(reply);
+				
+				}
+				
+				else if(msg.getConversationId() == "marcar-checkup"){
+					
+					float estado = checkUp(conjuntoSintomas);
+					reply.setPerformative(ACLMessage.INFORM);
+					reply.setContent(Float.toString(estado));
+					
+					myAgent.send(reply);
+					
+				}
 
 			} else {
 				block();
@@ -131,7 +139,7 @@ public class AgenteHospital extends Agent {
 				for (int i = 0; i < listaSala.size(); i++) {
 					for (int j = 0; j < conjuntoSintomas.length; j++) {
 						if (listaSala.get(i).getSintomas().contains(conjuntoSintomas[j])) {
-							System.out.println(sintoma + " A SER TRATADO AO " + msg.getSender().getName());
+							System.out.println(msg.getSender().getName() + "a ser tratado a " + sintoma);
 							listaSala.get(i).setOcupada(true);
 							try {
 								Thread.sleep(10000);
@@ -142,7 +150,7 @@ public class AgenteHospital extends Agent {
 							listaSala.get(i).setOcupada(false);
 							reply.setPerformative(ACLMessage.INFORM);
 	
-							System.out.println(sintoma + " TRATADO AO " + msg.getSender().getName());
+							System.out.println(sintoma + " tratado a " + msg.getSender().getName());
 						}
 					}
 				}
@@ -162,6 +170,35 @@ public class AgenteHospital extends Agent {
 
 	public List<Sala> geLlistaSala() {
 		return listaSala;
+	}
+	
+	public float checkUp(String[] sintomas){
+		
+		float estado=1;
+		
+		for(int i = 0; i < sintomas.length; i++){
+			
+			switch(sintomas[i]){
+			
+			case "o":
+				estado -=0.5;
+				
+			case "u":
+				estado -=0.1;
+				
+			case "p":
+				estado -=0.2;
+				
+			case "or":
+				estado -=0.4;
+			
+			
+			}
+			
+		}
+		
+		return estado;
+		
 	}
 
 }
