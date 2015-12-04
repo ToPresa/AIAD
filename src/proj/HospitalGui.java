@@ -46,7 +46,7 @@ public class HospitalGui extends JFrame {
 			public void actionPerformed(ActionEvent ev) {
 				try {
 					String sala = combo.getSelectedItem().toString();
-					myAgent.updateCatalogue(sala);
+					myAgent.updateHospital(sala);
 				} catch (Exception e) {
 					JOptionPane.showMessageDialog(HospitalGui.this, "Invalid values. " + e.getMessage(), "Error",
 							JOptionPane.ERROR_MESSAGE);

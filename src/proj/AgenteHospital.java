@@ -18,8 +18,6 @@ public class AgenteHospital extends Agent {
 	List<Sala> listaSala;
 	float melhorEstado = 1;
 	AID paciente1;
-	int sala=0;
-	int countPaciente =0;
 
 	// Put agent initializations here
 	protected void setup() {
@@ -68,7 +66,7 @@ public class AgenteHospital extends Agent {
 		System.out.println("Hospital " + getAID().getLocalName() + " fechou!");
 	}
 
-	public void updateCatalogue(final String sala) {
+	public void updateHospital(final String sala) {
 		addBehaviour(new OneShotBehaviour() {
 			public void action() {
 				// sintoma vao ser salas/recursos
@@ -82,14 +80,16 @@ public class AgenteHospital extends Agent {
 	}
 
 		private class CheckUp extends Behaviour {
-			boolean done = false;
-			int count = 0;
+
+			private static final long serialVersionUID = 1L;
+			
 			public void action() {
+				
 				MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.CFP);
 				ACLMessage msg = myAgent.receive(mt);
 				
-				
 				if (msg != null) {
+					//System.out.print(msg.getSender().toString());
 					// CFP Message received. Process it
 					String sintoma = msg.getContent();
 					ACLMessage reply = msg.createReply();
@@ -97,28 +97,26 @@ public class AgenteHospital extends Agent {
 					String[] conjuntoSintomas = sintoma.split(";");
 					
 				if(msg.getConversationId() == "marcar-checkup"){
-					
 					float estado = checkUp(conjuntoSintomas);
-					System.out.println("l:  " + estado);
 					reply.setPerformative(ACLMessage.INFORM);
 					reply.setContent(Float.toString(estado));
-					done = true;
-					count++;
+					reply.setReplyWith("marcar"+System.currentTimeMillis());
 					myAgent.send(reply);
-					
+
 				}
 			}
-			
-			}
+		
+		}
+
 			@Override
 			public boolean done() {
-				
 				return false;
 			}
 	}
 	
 	private class OfferRequestsServer extends CyclicBehaviour {
 		public void action() {
+			
 			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.CFP);
 			ACLMessage msg = myAgent.receive(mt);
 			if (msg != null) {
@@ -128,7 +126,7 @@ public class AgenteHospital extends Agent {
 				boolean encontrou = false;
 				
 				String[] conjuntoSintomas = sintoma.split(";");
-				
+
 				if(msg.getConversationId() == "marcar-recurso"){
 					for (int i = 0; i < listaSala.size(); i++) {
 						for (int j = 0; j < conjuntoSintomas.length; j++) {
@@ -138,7 +136,7 @@ public class AgenteHospital extends Agent {
 								encontrou = true;
 								reply.setPerformative(ACLMessage.PROPOSE);
 								reply.setContent(Integer.toString(i));
-								sala = i;
+								reply.setReplyWith("marcar"+System.currentTimeMillis());
 								break;
 							}
 						}
@@ -156,24 +154,33 @@ public class AgenteHospital extends Agent {
 				}
 				
 				MessageTemplate mt2 = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+				MessageTemplate mt3 = MessageTemplate.MatchPerformative(ACLMessage.AGREE);
 				ACLMessage reply2 = myAgent.receive(mt2);
-				//System.out.println("passei"+ reply2.getContent());
-				
-				
-				if (reply2 != null) {
+				ACLMessage tryhard = myAgent.receive(mt3);
+			
+				if (reply2 != null && reply2.getConversationId() == "marcar-recurso") {
 					// Reply received
 					if (reply2.getPerformative() == ACLMessage.INFORM) {
 						// This is an offer 
 						String resposta = reply2.getContent().toString();
-						/*if(Float.parseFloat(resposta) < melhorEstado){
-							melhorEstado = Float.parseFloat(resposta);
+						String[] resposta3 = resposta.split(";");
+						
+						if(Float.parseFloat(resposta3[1]) < melhorEstado){
+							melhorEstado = Float.parseFloat(resposta3[1]);
 							paciente1 = reply2.getSender();
-							
-						}*/
-						
-						System.out.println("RESPOSTA: "+resposta + "  " + melhorEstado);					
-						
+						}
+						listaSala.get(Integer.valueOf(resposta3[0])).setOcupada(true);
+						System.out.println("Foi selecionado: "+ Float.parseFloat(resposta3[1]) + "  " + melhorEstado + "sala: " + Integer.valueOf(resposta3[0]));					
+						melhorEstado = 1;
 					}
+				}
+				
+				else if (tryhard != null && tryhard.getConversationId() == "abrirsala") {
+
+							String resposta = tryhard.getContent().toString();
+
+							listaSala.get(Integer.valueOf(resposta)).setOcupada(false);
+							System.out.println("Foi libertada a sala! " + resposta);
 				}
 				
 
@@ -189,8 +196,10 @@ public class AgenteHospital extends Agent {
 			ACLMessage order = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
 			order.addReceiver(paciente1);
 			order.setContent("accepted");
-			order.setConversationId("marcar-recurso");
+			order.setConversationId("concluiratendimento");
+			order.setReplyWith("accepted"+System.currentTimeMillis());
 			myAgent.send(order);
+			
 		}
 
 		@Override
