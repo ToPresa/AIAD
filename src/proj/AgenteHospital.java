@@ -1,5 +1,6 @@
 package proj;
 
+import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.*;
 import jade.domain.DFService;
@@ -14,14 +15,18 @@ import java.util.*;
 public class AgenteHospital extends Agent {
 
 	private HospitalGui myGui;
-
 	List<Sala> listaSala;
+	float melhorEstado = 1;
+	AID paciente1;
+	int sala=0;
+	int countPaciente =0;
 
 	// Put agent initializations here
 	protected void setup() {
 		// Create the catalogue
 		// lista = new List();
 		listaSala = new ArrayList<Sala>();
+		paciente1 = new AID();
 
 		// Create and show the GUI
 		myGui = new HospitalGui(this);
@@ -39,6 +44,8 @@ public class AgenteHospital extends Agent {
 		} catch (FIPAException fe) {
 			fe.printStackTrace();
 		}
+		
+		addBehaviour(new CheckUp());
 
 		// Add the behaviour serving queries from buyer agents
 		addBehaviour(new OfferRequestsServer());
@@ -74,6 +81,42 @@ public class AgenteHospital extends Agent {
 		});
 	}
 
+		private class CheckUp extends Behaviour {
+			boolean done = false;
+			int count = 0;
+			public void action() {
+				MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.CFP);
+				ACLMessage msg = myAgent.receive(mt);
+				
+				
+				if (msg != null) {
+					// CFP Message received. Process it
+					String sintoma = msg.getContent();
+					ACLMessage reply = msg.createReply();
+					
+					String[] conjuntoSintomas = sintoma.split(";");
+					
+				if(msg.getConversationId() == "marcar-checkup"){
+					
+					float estado = checkUp(conjuntoSintomas);
+					System.out.println("l:  " + estado);
+					reply.setPerformative(ACLMessage.INFORM);
+					reply.setContent(Float.toString(estado));
+					done = true;
+					count++;
+					myAgent.send(reply);
+					
+				}
+			}
+			
+			}
+			@Override
+			public boolean done() {
+				
+				return false;
+			}
+	}
+	
 	private class OfferRequestsServer extends CyclicBehaviour {
 		public void action() {
 			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.CFP);
@@ -87,37 +130,52 @@ public class AgenteHospital extends Agent {
 				String[] conjuntoSintomas = sintoma.split(";");
 				
 				if(msg.getConversationId() == "marcar-recurso"){
-				for (int i = 0; i < listaSala.size(); i++) {
-					for (int j = 0; j < conjuntoSintomas.length; j++) {
-						if (listaSala.get(i).getSintomas().contains(conjuntoSintomas[j]) && listaSala.get(i).ocupada == false) {
-							// Existe uma sala que pode tratar aquele sintoma disponivel. Reply
-							
-							encontrou = true;
-							reply.setPerformative(ACLMessage.PROPOSE);
-							reply.setContent(listaSala.get(i).getNome());
+					for (int i = 0; i < listaSala.size(); i++) {
+						for (int j = 0; j < conjuntoSintomas.length; j++) {
+							if (listaSala.get(i).getSintomas().contains(conjuntoSintomas[j]) && listaSala.get(i).ocupada == false) {
+								// Existe uma sala que pode tratar aquele sintoma disponivel. Reply
+								
+								encontrou = true;
+								reply.setPerformative(ACLMessage.PROPOSE);
+								reply.setContent(Integer.toString(i));
+								sala = i;
+								break;
+							}
 						}
 					}
-				}
 
-				if (!encontrou) {
-					// The requested book is NOT available for sale.
-					reply.setPerformative(ACLMessage.REFUSE);
-					reply.setContent("not-available");
-				}
-
-				myAgent.send(reply);
-				
-				}
-				
-				else if(msg.getConversationId() == "marcar-checkup"){
+					if (!encontrou) {
+						// The requested book is NOT available for sale.
+						reply.setPerformative(ACLMessage.REFUSE);
+						reply.setContent("not-available");
+					}
 					
-					float estado = checkUp(conjuntoSintomas);
-					reply.setPerformative(ACLMessage.INFORM);
-					reply.setContent(Float.toString(estado));
-					
+					//System.out.println("Passei no f");
 					myAgent.send(reply);
-					
+				
 				}
+				
+				MessageTemplate mt2 = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+				ACLMessage reply2 = myAgent.receive(mt2);
+				//System.out.println("passei"+ reply2.getContent());
+				
+				
+				if (reply2 != null) {
+					// Reply received
+					if (reply2.getPerformative() == ACLMessage.INFORM) {
+						// This is an offer 
+						String resposta = reply2.getContent().toString();
+						/*if(Float.parseFloat(resposta) < melhorEstado){
+							melhorEstado = Float.parseFloat(resposta);
+							paciente1 = reply2.getSender();
+							
+						}*/
+						
+						System.out.println("RESPOSTA: "+resposta + "  " + melhorEstado);					
+						
+					}
+				}
+				
 
 			} else {
 				block();
@@ -125,46 +183,19 @@ public class AgenteHospital extends Agent {
 		}
 	} // End of inner class OfferRequestsServer
 
-	private class PurchaseOrdersServer extends CyclicBehaviour {
+	private class PurchaseOrdersServer extends Behaviour {
 		public void action() {
-			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL);
-			ACLMessage msg = myAgent.receive(mt);
-			if (msg != null) {
-				// ACCEPT_PROPOSAL Message received. Process it
-				String sintoma = msg.getContent();
-				ACLMessage reply = msg.createReply();
-				
-				String[] conjuntoSintomas = sintoma.split(";");
-				
-				for (int i = 0; i < listaSala.size(); i++) {
-					for (int j = 0; j < conjuntoSintomas.length; j++) {
-						if (listaSala.get(i).getSintomas().contains(conjuntoSintomas[j])) {
-							System.out.println(msg.getSender().getName() + "a ser tratado a " + sintoma);
-							listaSala.get(i).setOcupada(true);
-							try {
-								Thread.sleep(10000);
-							} catch (InterruptedException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-							listaSala.get(i).setOcupada(false);
-							reply.setPerformative(ACLMessage.INFORM);
-	
-							System.out.println(sintoma + " tratado a " + msg.getSender().getName());
-						}
-					}
-				}
+			
+			ACLMessage order = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
+			order.addReceiver(paciente1);
+			order.setContent("accepted");
+			order.setConversationId("marcar-recurso");
+			myAgent.send(order);
+		}
 
-				if (reply.getPerformative() != ACLMessage.INFORM) {
-					// The requested book is NOT available for sale.
-					reply.setPerformative(ACLMessage.REFUSE);
-					reply.setContent("not-available");
-				}
-
-				myAgent.send(reply);
-			} else {
-				block();
-			}
+		@Override
+		public boolean done() {
+			return false;
 		}
 	} // End of in
 
@@ -177,22 +208,27 @@ public class AgenteHospital extends Agent {
 		float estado=1;
 		
 		for(int i = 0; i < sintomas.length; i++){
-			
+			//System.out.println("CRL KA : " + sintomas[i] );
 			switch(sintomas[i]){
 			
 			case "o":
-				estado -=0.5;
-				
+				estado -= Math.random();
+				//System.out.println("HEIN : " + estado);
+				break;
 			case "u":
 				estado -=0.1;
-				
+				//System.out.println("HEIN222 : " + estado);
+				break;
 			case "p":
 				estado -=0.2;
-				
+				//System.out.println("HEIN3333: " + estado);
+				break;
 			case "or":
 				estado -=0.4;
-			
-			
+				//System.out.println("HEIN44 44: " + estado);
+				break;
+			default:
+				break;
 			}
 			
 		}

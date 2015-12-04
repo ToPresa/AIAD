@@ -18,11 +18,16 @@ public class AgentePaciente extends Agent{
 	private String sintoma;
 	private float estado;
 	private AID[] recursos;
-		
+	List<Pessoa> pessoas;
+	
 	protected void setup() {
 		// Printout a welcome message
 		System.out.println("Bem Vindo Sr/Sra: "+ getAID().getLocalName() + "!");
-
+		
+		pessoas = new ArrayList<Pessoa>();
+		Pessoa pessoa = new Pessoa(getAID().getLocalName());
+		pessoas.add(pessoa);
+		
 		// Obter os sintomas de um paciente como argumento de entrada
 		Object[] args = getArguments();
 		if (args != null && args.length > 0) {
@@ -36,7 +41,7 @@ public class AgentePaciente extends Agent{
 			// Schedules a request to Hospital agents every 10s
 			addBehaviour(new TickerBehaviour(this, 5000) {
 				protected void onTick() {
-					System.out.println("A tentar curar: " + sintoma);
+					System.out.println("A tentar curar: " + myAgent.getLocalName());
 					// Update the list of seller agents
 					DFAgentDescription template = new DFAgentDescription();
 					ServiceDescription sd = new ServiceDescription();
@@ -48,7 +53,7 @@ public class AgentePaciente extends Agent{
 						recursos = new AID[result.length];
 						for (int i = 0; i < result.length; ++i) {
 							recursos[i] = result[i].getName();
-							System.out.println(recursos[i].getName());
+							System.out.println(recursos[0].getName());
 						}
 					}
 					catch (FIPAException fe) {
@@ -87,6 +92,7 @@ public class AgentePaciente extends Agent{
 			switch (step) {
 			case 0:
 				// Send the cfp to all sellers
+				//System.out.println("AQIIIIIII 1");
 				ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
 				for (int i = 0; i < recursos.length; ++i) {
 					cfp.addReceiver(recursos[i]);
@@ -99,9 +105,11 @@ public class AgentePaciente extends Agent{
 				mt = MessageTemplate.and(MessageTemplate.MatchConversationId("marcar-checkup"),
 						MessageTemplate.MatchInReplyTo(cfp.getReplyWith()));
 				step = 1;
+				//System.out.println("AQIIIIIII 2 " + step);
 				break;
 				
 			case 1:
+				//System.out.println("AQIIIIIII 3");
 				// Receive all proposals/refusals from Hospital agents
 				ACLMessage reply = myAgent.receive(mt);
 				if (reply != null) {
@@ -110,7 +118,8 @@ public class AgentePaciente extends Agent{
 						// This is an offer 
 						
 						estado = Float.parseFloat(reply.getContent().toString());
-						System.out.println("O seu estado de saúde Sr/Sra: " + myAgent.getName() + "foi avaliado em" + estado);
+						
+						System.out.println("O seu estado de saúde Sr/Sra: " + myAgent.getLocalName() + " foi avaliado em " + estado);
 						done = true;
 					}
 				}
@@ -126,12 +135,7 @@ public class AgentePaciente extends Agent{
 
 		@Override
 		public boolean done() {
-			if(done && step == 1)
-				return true;
-			else{
-			System.out.println("Não foi possivel avaliar o seu estado de saude!");
-			return false;
-			}
+			return(done && step == 1);
 		}
 	}
 	
@@ -149,7 +153,8 @@ public class AgentePaciente extends Agent{
 				ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
 				for (int i = 0; i < recursos.length; ++i) {
 					cfp.addReceiver(recursos[i]);
-				} 
+				}
+				
 				cfp.setContent(sintoma);
 				cfp.setConversationId("marcar-recurso");
 				cfp.setReplyWith("cfp"+System.currentTimeMillis()); // Unique value
@@ -162,54 +167,56 @@ public class AgentePaciente extends Agent{
 			case 1:
 				// Receive all proposals/refusals from Hospital agents
 				ACLMessage reply = myAgent.receive(mt);
+				ACLMessage leiloar = new ACLMessage(ACLMessage.INFORM);
+			
 				if (reply != null) {
 					// Reply received
 					if (reply.getPerformative() == ACLMessage.PROPOSE) {
 						// This is an offer 
 						String resposta = reply.getContent().toString();
 						//System.out.println("RESPOSTA: "+resposta+ " "+ sintoma + "lllll " + reply.getSender().toString());
-						
+
 						// This is the best offer at present
-						recurso = reply.getSender();
+						leiloar.addReceiver(reply.getSender());
+						leiloar.setContent(Float.toString(estado));
+						leiloar.setConversationId("marcar-recurso");
+						leiloar.setReplyWith("marcar"+System.currentTimeMillis());
+						
+						//recurso = reply.getSender();
+						myAgent.send(leiloar);
+						step = 2; 
 		
 					}
+					
 					repliesCnt++;
 					if (repliesCnt >= recursos.length) {
-						// We received all replies
 						step = 2; 
 					}
 				}
 				else {
 					block();
 				}
+				
 				break;
-			case 2:
-				// Send the purchase order to the seller that provided the best offer
-				ACLMessage order = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
-				order.addReceiver(recurso);
-				order.setContent(sintoma);
-				order.setConversationId("marcar-recurso");
-				order.setReplyWith("marcar"+System.currentTimeMillis());
-				myAgent.send(order);
-				// Prepare the template to get the purchase order reply
-				mt = MessageTemplate.and(MessageTemplate.MatchConversationId("marcar-recurso"),
-						MessageTemplate.MatchInReplyTo(order.getReplyWith()));
-				step = 3;
-				break;
-			case 3:      
+			case 2:      
 				// Receive the purchase order reply
-				reply = myAgent.receive(mt);
+				//System.out.println("passei");
+				MessageTemplate mt2 = MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL);
+				//System.out.println("passei");
+				reply = myAgent.receive(mt2);
 				if (reply != null) {
+					//System.out.println("passei2");
 					// Purchase order reply received
-					if (reply.getPerformative() == ACLMessage.INFORM) {
+					if (reply.getPerformative() == ACLMessage.ACCEPT_PROPOSAL) {
 						// Purchase successful. We can terminate
 						System.out.println(sintoma+" tratado com sucesso!");
 						
-						System.out.println("Sintoma: " + sintoma);
+						
+						//System.out.println("Sintoma: " + sintoma + "      " + pessoas.size());
 						myAgent.doDelete();
 					}
 					else {
-						System.out.println("Não foi possivel tratar o seu sintoam!");
+						System.out.println("Não foi possivel tratar o seu sintoma!");
 					}
 
 					step = 4;
@@ -222,11 +229,10 @@ public class AgentePaciente extends Agent{
 		}
 
 		public boolean done() {
-			if (step == 2 && recurso == null) {
-				System.out.println("Não é possivel tratar: "+sintoma);
-			}
-			return ((step == 2 && recurso == null) || step == 4);
+			return false;
 		}
 	}  // End of inner class RequestPerformer
+	
+	
 
 }
