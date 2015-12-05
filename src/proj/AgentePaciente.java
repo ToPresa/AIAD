@@ -16,7 +16,7 @@ import jade.lang.acl.MessageTemplate;
 public class AgentePaciente extends Agent {
 
 	private String sintoma;
-	private float estado;
+	private float estado = 0;
 	private AID[] recursos;
 	String temp = "";
 
@@ -59,9 +59,10 @@ public class AgentePaciente extends Agent {
 					}
 
 					// Perform the request
-					myAgent.addBehaviour(new RequestCheckUp());
+					if(estado == 0)
+						myAgent.addBehaviour(new RequestCheckUp());
 
-					myAgent.addBehaviour(new RequestPerformer());
+						myAgent.addBehaviour(new RequestPerformer());
 				}
 			});
 		} else {
@@ -88,6 +89,7 @@ public class AgentePaciente extends Agent {
 
 			switch (step) {
 			case 0:
+				System.out.println("CHECKUPPPP");
 				// Send the cfp to all sellers
 				ACLMessage cfp = new ACLMessage(ACLMessage.REQUEST);
 				for (int i = 0; i < recursos.length; ++i) {
@@ -107,6 +109,7 @@ public class AgentePaciente extends Agent {
 				break;
 
 			case 1:
+				System.out.println("CHECKUPPPP2");
 				// Receive all proposals/refusals from Hospital agents
 				ACLMessage reply = myAgent.receive(mt);
 				if (reply != null) {
@@ -244,6 +247,7 @@ public class AgentePaciente extends Agent {
 					} else {
 						System.out
 								.println("Não foi possivel tratar o seu sintoma!");
+						step = 0;
 					}
 
 				} else {
