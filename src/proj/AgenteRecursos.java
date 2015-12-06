@@ -56,6 +56,7 @@ public class AgenteRecursos extends Agent {
 		// Add the behaviour serving queries from buyer agents
 		//System.out.print(this.getLocalName().toString());
 		//if(this.getLocalName().toString() != "Triagem")
+		if(!this.getLocalName().toString().equals("Triagem"))
 			addBehaviour(new OfferRequestsServer());
 
 	}
@@ -69,6 +70,13 @@ public class AgenteRecursos extends Agent {
 			fe.printStackTrace();
 		}
 		// Printout a dismissal message
+		
+		String currentDirFile = System.getProperty("user.dir");
+		File file = new File(currentDirFile + "\\" + "resources" +  "\\" + getAID().getLocalName() + ".txt");
+		
+		if (file.exists()) {
+			file.delete();
+		}
 		
 		System.out.println("Sala " + getAID().getLocalName() + " fechou!");
 	}
@@ -189,15 +197,16 @@ public class AgenteRecursos extends Agent {
 		private static final long serialVersionUID = 1L;
 		MessageTemplate mt;
 		private int step = 0;
+		StringBuffer stringBuffer;
 		
 		public void action() {
 
 			switch (step) {
 
 			case 0:
-				StringBuffer stringBuffer = Readfile(myAgent.getLocalName().toString(), queue);
-				
-				
+
+				stringBuffer = Readfile(myAgent.getLocalName().toString(), queue);
+
 				//print dos valores da queue
 				   Iterator it = queue.entrySet().iterator();
 				    while (it.hasNext()) {
