@@ -52,7 +52,7 @@ public class AgentePaciente extends Agent {
 						recursos = new AID[result.length];
 						for (int i = 0; i < result.length; ++i) {
 							recursos[i] = result[i].getName();
-							System.out.println(recursos[0].getName());
+							System.out.println(recursos[i].getName());
 						}
 					} catch (FIPAException fe) {
 						fe.printStackTrace();

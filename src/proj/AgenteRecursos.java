@@ -15,6 +15,7 @@ import java.util.*;
 public class AgenteRecursos extends Agent {
 
 	List<Sala> listaSala;
+	AID[] Salas;
 	float melhorEstado = 1;
 	float escolhido=0;
 	AID paciente1;
@@ -32,6 +33,7 @@ public class AgenteRecursos extends Agent {
 
 		// Register the book-selling service in the yellow pages
 		DFAgentDescription dfd = new DFAgentDescription();
+		System.out.print(getAID());
 		dfd.setName(getAID());
 		ServiceDescription sd = new ServiceDescription();
 		sd.setType("alocar-recursos");
@@ -48,8 +50,6 @@ public class AgenteRecursos extends Agent {
 		// Add the behaviour serving queries from buyer agents
 		addBehaviour(new OfferRequestsServer());
 
-		// Add the behaviour serving purchase orders from buyer agents
-		//addBehaviour(new PurchaseOrdersServer());
 	}
 
 	// Put agent clean-up operations here

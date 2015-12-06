@@ -1,4 +1,4 @@
-package proj;
+ package proj;
 
 import jade.core.AID;
 import jade.core.Agent;
@@ -20,6 +20,7 @@ import java.util.*;
 public class AgenteHospital extends Agent {
 	
 		private HospitalGui myGui;
+		
 		// Put agent initializations here
 		protected void setup() {
 			// Create and show the GUI
@@ -32,16 +33,18 @@ public class AgenteHospital extends Agent {
 		public void updateHospital(final String sala) {
 			addBehaviour(new OneShotBehaviour() {
 				public void action() {
+					
 					ContainerController cc = getContainerController();
-					AgentController ac;
+					AgentController ac = null;
+					
 					try {
-						ac = cc.createNewAgent(sala, "proj.AgenteRecursos", null);
+						ac = cc.createNewAgent(sala, "proj.AgenteRecursos" , null);
 						ac.start();
-					} catch (StaleProxyException e1) {
+					} catch (StaleProxyException e) {
 						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					}
-				
+						e.printStackTrace();
+					}		
+					
 					System.out.println(sala + " adicionada!");
 				}
 			});
