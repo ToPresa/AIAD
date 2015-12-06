@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.security.KeyStore.Entry;
 import java.util.*;
 
 public class AgenteRecursos extends Agent {
@@ -29,11 +30,12 @@ public class AgenteRecursos extends Agent {
 	float var;
 	String teste = "";
 	List<Float> estados;
-	HashMap<String, Float> queue = new HashMap <String, Float>();
+	HashMap<String, Float> queue;
 	
 	// Put agent initializations here
 	protected void setup() {
 		paciente1 = new AID();
+		queue = new HashMap <String, Float>();
 		estados = new ArrayList<Float>();
 		// Registar o serviço da sala nas "paginas-amarelas"
 		DFAgentDescription dfd = new DFAgentDescription();
@@ -67,6 +69,7 @@ public class AgenteRecursos extends Agent {
 			fe.printStackTrace();
 		}
 		// Printout a dismissal message
+		
 		System.out.println("Sala " + getAID().getLocalName() + " fechou!");
 	}
 
@@ -81,7 +84,7 @@ public class AgenteRecursos extends Agent {
 			MessageTemplate mt = MessageTemplate
 					.MatchPerformative(ACLMessage.REQUEST);
 			ACLMessage msg = myAgent.receive(mt);
-
+			
 			if (msg != null) {
 				// CFP Message received. Process it
 				String sintoma = msg.getContent();
@@ -115,7 +118,7 @@ public class AgenteRecursos extends Agent {
 
 			String content = Sender + ";" + Estado + "\n";
 			String currentDirFile = System.getProperty("user.dir");
-			
+		
 			System.out.print(currentDirFile + "\\" + "resources" +  "\\" + Sala + ".txt");
 			File file = new File(currentDirFile + "\\" + "resources" +  "\\" + Sala + ".txt");
 			
@@ -137,7 +140,7 @@ public class AgenteRecursos extends Agent {
 		}
 	}
 	
-	public static StringBuffer Readfile(String Sala){
+	public static StringBuffer Readfile(String Sala, HashMap<String, Float> queue){
 		
 		StringBuffer stringBuffer = null;
 		
@@ -151,15 +154,24 @@ public class AgenteRecursos extends Agent {
 			BufferedReader bufferedReader = new BufferedReader(fileReader);
 			stringBuffer = new StringBuffer();
 			String line;
-			
+		
 			while ((line = bufferedReader.readLine()) != null) {
 				stringBuffer.append(line);
+				
+				String[] parts = line.split(";");
+				String name = parts[0];
+				String estado = parts[1]; 
+				//System.out.println("Contents of file 11 :  " + name + "  --  " + estado);
+				queue.put(name, Float.parseFloat(estado));
+				//System.out.println("Contents of file:  " + line);
 				stringBuffer.append("\n");
+				
+				
 			}
 			
 			fileReader.close();
-			System.out.println("Contents of file:");
-			System.out.println(stringBuffer.toString());
+			//System.out.println("Contents of file:");
+			//System.out.println(stringBuffer.toString());
 			
 			
 		} catch (IOException e) {
@@ -183,7 +195,22 @@ public class AgenteRecursos extends Agent {
 			switch (step) {
 
 			case 0:
-				//StringBuffer stringBuffer = Readfile(myAgent.getLocalName().toString());
+				StringBuffer stringBuffer = Readfile(myAgent.getLocalName().toString(), queue);
+				
+				
+				//print dos valores da queue
+				   Iterator it = queue.entrySet().iterator();
+				    while (it.hasNext()) {
+				        Map.Entry pair = (Map.Entry)it.next();
+				        System.out.println(pair.getKey() + " = " + pair.getValue());
+				    }
+				    
+				    //Float min = Collections.min(queue.values());
+				    
+				    //System.out.printf(" MINIMOOOOOOOOOO " + min);
+				    
+				System.out.println("CRLLLL :  " + queue.size());
+				
 				mt = MessageTemplate.MatchPerformative(ACLMessage.CFP);
 				ACLMessage msg = myAgent.receive(mt);
 				if (msg != null && msg.getConversationId() == "marcar-recurso") {
