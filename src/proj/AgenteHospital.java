@@ -15,6 +15,7 @@ import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 import jade.wrapper.StaleProxyException;
 
+import java.nio.file.Files;
 import java.util.*;
 
 public class AgenteHospital extends Agent {
@@ -58,6 +59,7 @@ public class AgenteHospital extends Agent {
 			} catch (FIPAException fe) {
 				fe.printStackTrace();
 			}
+	
 			// Close the GUI
 			myGui.dispose();
 			// Printout a dismissal message

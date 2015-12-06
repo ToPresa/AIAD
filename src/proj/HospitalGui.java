@@ -33,7 +33,7 @@ public class HospitalGui extends JFrame {
 		TitledBorder nameBorder = BorderFactory.createTitledBorder("Escolha as salas disponíveis:");
 
 		myAgent = a;
-		combo = new JComboBox((new Object[] { "Oncologia", "Pediatria", "Urgência", "Ortopedia", "Genecologia",
+		combo = new JComboBox((new Object[] {"Oncologia", "Pediatria", "Urgência", "Ortopedia", "Genecologia",
 				"Urologia", "Medicina Dentária", "Cirurgia", "Dermatologia" }));
 		JPanel p = new JPanel();
 		p.setPreferredSize(new Dimension(400, 250));
@@ -53,6 +53,8 @@ public class HospitalGui extends JFrame {
 				}
 			}
 		});
+		
+		myAgent.updateHospital("Triagem");
 		p = new JPanel();
 		p.add(addButton);
 		getContentPane().add(p, BorderLayout.SOUTH);

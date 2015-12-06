@@ -1,0 +1,6 @@
+( agent-identifier :name p1@172.30.60.248:1099/JADE  :addresses (sequence http://Francisco:7778/acc ));0.83524215
+( agent-identifier :name p2@172.30.60.248:1099/JADE  :addresses (sequence http://Francisco:7778/acc ));0.5182511
+( agent-identifier :name p1@172.30.60.248:1099/JADE  :addresses (sequence http://Francisco:7778/acc ));0.7969296
+( agent-identifier :name p1@172.30.60.248:1099/JADE  :addresses (sequence http://Francisco:7778/acc ));0.5032688
+( agent-identifier :name p2@172.30.60.248:1099/JADE  :addresses (sequence http://Francisco:7778/acc ));0.7542275
+( agent-identifier :name p1@172.30.60.248:1099/JADE  :addresses (sequence http://Francisco:7778/acc ));0.7539659

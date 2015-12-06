@@ -15,31 +15,38 @@ import jade.lang.acl.MessageTemplate;
 
 public class AgentePaciente extends Agent {
 
-	private String sintoma;
+	private static final long serialVersionUID = 1L;
+	
+	private List<String> sintoma;
 	private float estado = 0;
 	private AID[] recursos;
+	private List<String> procura;
 	String temp = "";
 
 	protected void setup() {
 		// Printout a welcome message
-		System.out
-				.println("Bem Vindo Sr/Sra: " + getAID().getLocalName() + "!");
-
+		System.out.println("Bem Vindo Sr/Sra: " + getAID().getLocalName() + "!");
+		
+		sintoma = new ArrayList<String>();
+		procura = new ArrayList<String>();
+		
 		// Obter os sintomas de um paciente como argumento de entrada
 		Object[] args = getArguments();
 		if (args != null && args.length > 0) {
-			sintoma = (String) args[0];
-			System.out.println("Sintoma registado: " + sintoma);
-			// recebo os sintomas
-			// depois de analisar, verifico que o paciente quer a sala X
+			for(int n = 0; n < args.length; ++n){
+			sintoma.add(args[n].toString());
+			System.out.println("Sintoma registado: " + args[n].toString());
+			}
+			
 
-			// sintoma = SalaPaciente(sintoma);
-
+			addSala(sintoma);
+			
 			// Schedules a request to Hospital agents every 10s
 			addBehaviour(new TickerBehaviour(this, 5000) {
+				private static final long serialVersionUID = 1L;
+
 				protected void onTick() {
-					System.out.println("A tentar curar: "
-							+ myAgent.getLocalName());
+					System.out.println("A tentar curar: "+ myAgent.getLocalName());
 					// Update the list of seller agents
 					DFAgentDescription template = new DFAgentDescription();
 					ServiceDescription sd = new ServiceDescription();
@@ -83,19 +90,19 @@ public class AgentePaciente extends Agent {
 		private static final long serialVersionUID = 1L;
 		private MessageTemplate mt; // The template to receive replies
 		private int step = 0;
-		boolean done = false;
 
 		public void action() {
 
 			switch (step) {
 			case 0:
-				System.out.println("CHECKUPPPP");
-				// Send the cfp to all sellers
+				//Solicitar o checkup à sala de Triagem
 				ACLMessage cfp = new ACLMessage(ACLMessage.REQUEST);
 				for (int i = 0; i < recursos.length; ++i) {
-					cfp.addReceiver(recursos[i]);
+					if(recursos[i].getLocalName().toString().matches("Triagem"))
+						cfp.addReceiver(recursos[i]);
+						
 				}
-				cfp.setContent(sintoma);
+				cfp.setContent(sintoma.get(0) + ";" + procura.get(0));
 				cfp.setConversationId("marcar-checkup");
 				cfp.setReplyWith("cfp" + System.currentTimeMillis()); // Unique
 																		// value
@@ -109,8 +116,7 @@ public class AgentePaciente extends Agent {
 				break;
 
 			case 1:
-				System.out.println("CHECKUPPPP2");
-				// Receive all proposals/refusals from Hospital agents
+				//Receber resposta da triagem que diz respeito ao meu estado de saúde
 				ACLMessage reply = myAgent.receive(mt);
 				if (reply != null) {
 					// Reply received
@@ -118,13 +124,12 @@ public class AgentePaciente extends Agent {
 							&& reply.getConversationId() == "marcar-checkup") {
 						// This is an offer
 
-						estado = Float
-								.parseFloat(reply.getContent().toString());
+						estado = Float.parseFloat(reply.getContent().toString());
 
 						System.out.println("O seu estado de saúde Sr/Sra: "
 								+ myAgent.getLocalName() + " foi avaliado em "
 								+ estado);
-						done = true;
+						
 					}
 				}
 
@@ -146,8 +151,6 @@ public class AgentePaciente extends Agent {
 
 	private class RequestPerformer extends Behaviour {
 		private static final long serialVersionUID = 1L;
-		private int repliesCnt = 0; // The counter of replies from Hospital
-									// agents
 		private MessageTemplate mt; // The template to receive replies
 		private int step = 0;
 
@@ -157,10 +160,11 @@ public class AgentePaciente extends Agent {
 				// Send the cfp to all sellers
 				ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
 				for (int i = 0; i < recursos.length; ++i) {
-					cfp.addReceiver(recursos[i]);
+					if(recursos[i].getLocalName().matches(procura.get(0)))
+						cfp.addReceiver(recursos[i]);
 				}
 
-				cfp.setContent(sintoma);
+				cfp.setContent(sintoma.get(0).toString());
 				cfp.setConversationId("marcar-recurso");
 				cfp.setReplyWith("cfp" + System.currentTimeMillis()); // Unique
 																		// value
@@ -190,8 +194,8 @@ public class AgentePaciente extends Agent {
 
 						leiloar.addReceiver(reply.getSender());
 						temp = reply.getContent();
-						leiloar.setContent(Integer.valueOf(reply.getContent())
-								+ ";" + Float.toString(estado));
+
+						leiloar.setContent(Float.toString(estado));
 						leiloar.setConversationId("marcar-recurso");
 						leiloar.setReplyWith("marcar"
 								+ System.currentTimeMillis());
@@ -232,7 +236,7 @@ public class AgentePaciente extends Agent {
 							e.printStackTrace();
 						}
 						
-						System.out.println(sintoma + " tratado com sucesso!");
+						System.out.println(sintoma.get(0).toString() + " tratado com sucesso!");
 						// This is the best offer at present
 						abresala.addReceiver(reply2.getSender());
 						abresala.setContent(temp);
@@ -242,7 +246,11 @@ public class AgentePaciente extends Agent {
 												
 						myAgent.send(abresala);
 						
-						step = 3;
+						procura.remove(0);
+						sintoma.remove(0);
+						
+						if(Thread.currentThread().getState() == Thread.State.RUNNABLE)
+							step = 3;
 
 					} else {
 						System.out
@@ -262,12 +270,38 @@ public class AgentePaciente extends Agent {
 		}
 
 		public boolean done() {
-			if (step == 3) {
+			if (step == 3 && procura.size() == 0) {
 				myAgent.doDelete();
 				return true;
 			} else
 				return false;
 		}
 	} // End of inner class RequestPerformer
+	
+	public void addSala(List<String> sintoma){
+
+		for(int n = 0; n < sintoma.size();++n){
+			
+		switch(sintoma.get(n)){
+		
+		case "o":
+			
+			procura.add("Oncologia");
+			break;
+			
+			
+		case "p":
+			
+			procura.add("Urgência");
+			break;
+			
+		case "i":
+			procura.add("Pediatria");
+			break;
+		}
+		}
+		//return procura;
+		
+	}
 
 }
