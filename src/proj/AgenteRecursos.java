@@ -17,6 +17,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.security.KeyStore.Entry;
 import java.util.*;
 
@@ -71,8 +72,6 @@ public class AgenteRecursos extends Agent {
 		
 			
 		// Add the behaviour serving queries from buyer agents
-		//System.out.print(this.getLocalName().toString());
-		//if(this.getLocalName().toString() != "Triagem")
 			
 			if(!this.getLocalName().toString().equals("Triagem"))
 				addBehaviour(new OfferRequestsServer());
@@ -103,31 +102,29 @@ public class AgenteRecursos extends Agent {
 	private class CheckUp extends CyclicBehaviour {
 
 		private static final long serialVersionUID = 1L;
-
-		private boolean end = false;
 		
 		public void action() {
 			MessageTemplate mt = MessageTemplate
 					.MatchPerformative(ACLMessage.REQUEST);
+			
 			ACLMessage msg = myAgent.receive(mt);
 			
 			if (msg != null) {
 				// CFP Message received. Process it
 				String sintoma = msg.getContent();
-				ACLMessage reply = msg.createReply();
+				ACLMessage info = msg.createReply();
 
 				String[] conjuntoSintomas = sintoma.split(";");
 
 				if (msg.getConversationId() == "marcar-checkup") {
+					
 					float estado = checkUp(conjuntoSintomas);
-					reply.setPerformative(ACLMessage.INFORM);
-					reply.setContent(Float.toString(estado));
-					reply.setReplyWith("marcar" + System.currentTimeMillis());
-
+					info.setPerformative(ACLMessage.INFORM);
+					info.setContent(Float.toString(estado));
+					
 					writeFile(conjuntoSintomas[1].toString(), msg.getSender().toString(), estado);
 					
-					myAgent.send(reply);
-					end = true;
+					myAgent.send(info);
 
 				}
 			}
@@ -137,7 +134,6 @@ public class AgenteRecursos extends Agent {
 		}
 
 	}
-	
 	
 	public static void writeFile(String Sala, String Sender, Float Estado) {
 		try {
@@ -187,7 +183,12 @@ public class AgenteRecursos extends Agent {
 				String[] parts = line.split(";");
 				String name = parts[0];
 				String estado = parts[1]; 
+				
+				//String[] name2 = name.split("@");
+				//String name22 = name2[0];
+				//System.out.println("NOME CRL:  " + name22.substring(25, name22.length()).trim());
 				//System.out.println("Contents of file 11 :  " + name + "  --  " + estado);
+				//queue.put(name22.substring(25, name22.length()).trim(), Float.parseFloat(estado));
 				queue.put(name, Float.parseFloat(estado));
 				//System.out.println("Contents of file:  " + line);
 				stringBuffer.append("\n");
@@ -206,115 +207,187 @@ public class AgenteRecursos extends Agent {
 		
 		return stringBuffer;
 		
-		
-		
 	}
 
+	public static String getKeyFromValue(HashMap<String,Float> hm, Float value) {
+	    for (String o : hm.keySet()) {
+	      if (hm.get(o).equals(value)) {
+	        return o;
+	      }
+	    }
+	    return null;
+	  }
 
+	public static void removerDoFicheiro(String lineToRemove, String Sala) {	
+			
+		  try {
+			  
+
+			  StringBuffer stringBuffer = null;
+					
+			  String currentDirFile = System.getProperty("user.dir");
+			  File inFile = new File(currentDirFile + "\\" + "resources" +  "\\" + Sala + ".txt");
+
+
+		      if (!inFile.isFile()) {
+		        System.out.println("Parameter is not an existing file");
+		        return;
+		      }
+
+		      //Construct the new file that will later be renamed to the original filename.
+		      File tempFile = new File(inFile.getAbsolutePath() + ".tmp");
+
+		      BufferedReader br = new BufferedReader(new FileReader(currentDirFile + "\\" + "resources" +  "\\" + Sala + ".txt"));
+		      PrintWriter pw = new PrintWriter(new FileWriter(tempFile));
+
+		      String line = null;
+
+		      //Read from the original file and write to the new
+		      //unless content matches data to be removed.
+		      while ((line = br.readLine()) != null) {
+
+		        if (!line.substring(25, 25+lineToRemove.length()).trim().equals(lineToRemove)) {
+		        	
+		        	pw.println(line);
+		        	pw.flush();
+		        }
+		      }
+		      pw.close();
+		      br.close();
+
+		      //Delete the original file
+		      if (!inFile.delete()) {
+		        System.out.println("Could not delete file");
+		        return;
+		      }
+
+		      //Rename the new file to the filename the original file had.
+		      if (!tempFile.renameTo(inFile))
+		        System.out.println("Could not rename file");
+
+		    }
+		    catch (FileNotFoundException ex) {
+		      ex.printStackTrace();
+		    }
+		    catch (IOException ex) {
+		      ex.printStackTrace();
+		    }
+	
+		
+	}
+	
 	private class OfferRequestsServer extends CyclicBehaviour {
 		private static final long serialVersionUID = 1L;
 		MessageTemplate mt;
 		private int step = 0;
 		StringBuffer stringBuffer;
+		Float min = 1f;
+		String key = "";
+		AID pac = null;
 		
 		public void action() {
 
 			switch (step) {
 
 			case 0:
-
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				boolean advance = false;
+				ACLMessage marcaconsulta = new ACLMessage(ACLMessage.INFORM);
 				stringBuffer = Readfile(myAgent.getLocalName().toString(), queue);
-				Float min = 1f;
-				// print dos valores da queue
-				/*
-				 * Iterator it = queue.entrySet().iterator(); while
-				 * (it.hasNext()) { Map.Entry pair = (Map.Entry)it.next();
-				 * System.out.println(pair.getKey() + " = " + pair.getValue());
-				 * }
-				 */
+				//System.out.println("QUEUEEE IN: " + queue.size());
 				
 				// escolhe o valor minimo
 				if (stringBuffer.length() != 0) {
 					min = Collections.min(queue.values());
-					System.out.printf(" MINIMOOOOOOOOOO " + min);
+					key = getKeyFromValue(queue, min);
+					//System.out.println("CRLLLLL          " + min + " ---" + key);
+				}
+				
+				DFAgentDescription template = new DFAgentDescription();
+				ServiceDescription sd = new ServiceDescription();
+				sd.setType("alocar-pacientes");
+				template.addServices(sd);
+				
+				try {
+					DFAgentDescription[] result = DFService.search(myAgent,
+							template);
+					//System.out.println("Encontrei estes recursos:");
+					for (int i = 0; i < result.length; ++i) {
+						if(result[i].getName().toString().equals(key)){
+							pac = result[i].getName();
+							System.out.println("OH CRL: " + pac.toString());
+							advance = true;
+						}
+							
+					}
+					
+				} catch (FIPAException fe) {
+					fe.printStackTrace();
 				}
 
-				mt = MessageTemplate.MatchPerformative(ACLMessage.CFP);
-				ACLMessage msg = myAgent.receive(mt);
-				if (msg != null && msg.getConversationId() == "marcar-recurso" && min != 1) {
-					// CFP Message received. Process it
-					ACLMessage reply = msg.createReply();
-
-					reply.setPerformative(ACLMessage.PROPOSE);
-					reply.setContent("Sala marcada");
-					reply.setReplyWith("marcar" + System.currentTimeMillis());
+				
+				marcaconsulta.addReceiver(pac);
+				marcaconsulta.setContent("consulta-marcada");
+				marcaconsulta.setConversationId("marcar-recurso");
+				marcaconsulta.setReplyWith("marcar" + System.currentTimeMillis());
+				
+				myAgent.send(marcaconsulta);
+				
+				if(advance)
 					step = 1;
-					myAgent.send(reply);
-
-				}
-
-				else {
-					block();
-				}
-
 				break;
 
 			case 1:
 				
-				mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
-				ACLMessage reply2 = myAgent.receive(mt);
+				MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+				ACLMessage reply = myAgent.receive(mt);
 				
-				if (reply2 != null
-						&& reply2.getConversationId() == "marcar-recurso") {
-					// Reply received
-					if (reply2.getPerformative() == ACLMessage.INFORM) {
-						String resposta = reply2.getContent().toString();
-						
-						System.out.println("Foi selecionado: " + Float.valueOf(resposta));
-
-							paciente1 = reply2.getSender();
-							step = 2;
-					}
-				}
-
-				else {
-					block();
-				}
-
-				break;
-
-			case 2:
+				if(reply != null){
+					if (reply.getPerformative() == ACLMessage.INFORM && reply.getConversationId() == "alocar-recurso") {
 				
 				ACLMessage order = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
-				//System.out.print(String.valueOf(queue.size()));
-				order.addReceiver(paciente1);
-				order.setContent("accepted");
+				System.out.print("Passei no 1");
+				order.addReceiver(pac);
+				order.setContent("concluido");
 				order.setConversationId("concluir");
-				order.setReplyWith("accepted" + System.currentTimeMillis());
+				order.setReplyWith("concluir" + System.currentTimeMillis());
+				
 				myAgent.send(order);
 				
-				step = 3;
+				step = 2;
+				
+					}
+				}
+				
+				else
+					block();
 				
 				break;
 				
 				
-			case 3:
+			case 2:
+				
 				mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
 				ACLMessage theend = myAgent.receive(mt);
 
-				if (theend != null) {
+				if (theend != null && theend.getConversationId() == "terminar-paciente") {
 					
 					String resposta = theend.getContent().toString();
-					System.out.println("Foi libertada a sala! " + resposta);
+					System.out.println("Foi libertada a sala! " + resposta + " --- " + pac.getLocalName() + "   ---  " + myAgent.getLocalName().toString());
+					removerDoFicheiro(pac.getName().toString(), myAgent.getLocalName().toString());
+					queue.values().remove(Float.valueOf(theend.getContent().toString()));
+					//System.out.println("QUEUEEE FI: " + queue.size() + " -- " + pac.getName().toString());
 					step = 0;
-					System.out.print(queue.size());
-					queue.remove(theend.getSender());
-					System.out.print(var);
 				}
 
 				else {
 					block();
-					step = 3;
+					
 				}
 				
 				break;

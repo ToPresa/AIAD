@@ -1,2 +1,0 @@
-( agent-identifier :name p@172.30.82.80:1099/JADE  :addresses (sequence http://Toshiba:7778/acc ));0.09818447
-( agent-identifier :name pp@172.30.82.80:1099/JADE  :addresses (sequence http://Toshiba:7778/acc ));0.08818333

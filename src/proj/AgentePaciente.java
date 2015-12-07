@@ -38,6 +38,19 @@ public class AgentePaciente extends Agent {
 			System.out.println("Sintoma registado: " + args[n].toString());
 			}
 			
+			DFAgentDescription dfd = new DFAgentDescription();
+			dfd.setName(getAID());
+			ServiceDescription sd = new ServiceDescription();
+			sd.setType("alocar-pacientes");
+			sd.setName("Doentes");
+			dfd.addServices(sd);
+			
+			try {
+				DFService.register(this, dfd);
+			} catch (FIPAException fe) {
+				fe.printStackTrace();
+			}
+			
 
 			addSala(sintoma);
 			
@@ -88,7 +101,6 @@ public class AgentePaciente extends Agent {
 	private class RequestCheckUp extends Behaviour {
 
 		private static final long serialVersionUID = 1L;
-		private MessageTemplate mt; // The template to receive replies
 		private int step = 0;
 
 		public void action() {
@@ -108,36 +120,36 @@ public class AgentePaciente extends Agent {
 																		// value
 				myAgent.send(cfp);
 
-				mt = MessageTemplate.and(
-						MessageTemplate.MatchConversationId("marcar-checkup"),
-						MessageTemplate.MatchInReplyTo(cfp.getReplyWith()));
-
 				step = 1;
 				break;
 
 			case 1:
+				
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
 				//Receber resposta da triagem que diz respeito ao meu estado de saúde
+				MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
 				ACLMessage reply = myAgent.receive(mt);
-				if (reply != null) {
-					// Reply received
-					if (reply.getPerformative() == ACLMessage.INFORM
-							&& reply.getConversationId() == "marcar-checkup") {
-						// This is an offer
 
+				if (reply != null && reply.getConversationId() == "marcar-checkup") {
+					// Reply received
 						estado = Float.parseFloat(reply.getContent().toString());
 
 						System.out.println("O seu estado de saúde Sr/Sra: "
 								+ myAgent.getLocalName() + " foi avaliado em "
 								+ estado);
 						
-					}
 				}
 
 				else {
 					block();
 				}
 
-				step = 0;
 				break;
 
 			}
@@ -156,58 +168,29 @@ public class AgentePaciente extends Agent {
 
 		public void action() {
 			switch (step) {
+			
 			case 0:
-				// Send the cfp to all sellers
-				ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
-				for (int i = 0; i < recursos.length; ++i) {
-					if(recursos[i].getLocalName().matches(procura.get(0)))
-						cfp.addReceiver(recursos[i]);
-				}
-
-				cfp.setContent(sintoma.get(0).toString());
-				cfp.setConversationId("marcar-recurso");
-				cfp.setReplyWith("cfp" + System.currentTimeMillis()); // Unique
-																		// value
-				myAgent.send(cfp);
-				// Prepare the template to get proposals
-				mt = MessageTemplate.and(
-						MessageTemplate.MatchConversationId("marcar-recurso"),
-						MessageTemplate.MatchInReplyTo(cfp.getReplyWith()));
-				step = 1;
-
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-				break;
-			case 1:
 				// Receive all proposals/refusals from Hospital agents
+				MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
 				ACLMessage reply = myAgent.receive(mt);
+				
 				ACLMessage leiloar = new ACLMessage(ACLMessage.INFORM);
 								
 				if (reply != null) {
 					// Reply received
-					if (reply.getPerformative() == ACLMessage.PROPOSE) {
+					if (reply.getPerformative() == ACLMessage.INFORM && reply.getConversationId() == "marcar-recurso") {
 
 						leiloar.addReceiver(reply.getSender());
-						temp = reply.getContent();
-
-						leiloar.setContent(Float.toString(estado));
-						leiloar.setConversationId("marcar-recurso");
-						leiloar.setReplyWith("marcar"
+						System.out.println("OLA!!!!!");
+						
+						leiloar.setContent("Atendido");
+						leiloar.setConversationId("alocar-recurso");
+						leiloar.setReplyWith("alocar"
 								+ System.currentTimeMillis());
 						
 						myAgent.send(leiloar);
-						step = 2;
+						step = 1;
 
-					}
-
-					else if (reply.getPerformative() == ACLMessage.REFUSE) {
-						step = 0;
-						break;
 					}
 
 				}		
@@ -216,7 +199,8 @@ public class AgentePaciente extends Agent {
 				}
 
 				break;
-			case 2:
+				
+			case 1:
 				// Receive the purchase order reply
 				MessageTemplate mt2 = MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL);
 				
@@ -228,18 +212,11 @@ public class AgentePaciente extends Agent {
 					// Purchase order reply received
 					if (reply2.getPerformative() == ACLMessage.ACCEPT_PROPOSAL
 							&& reply2.getConversationId() == "concluir") {
-
-						try {
-							Thread.sleep(5000);
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
 						
 						System.out.println(sintoma.get(0).toString() + " tratado com sucesso!");
-						// This is the best offer at present
+						
 						abresala.addReceiver(reply2.getSender());
-						abresala.setContent(temp);
+						abresala.setContent(Float.toString(estado));
 						abresala.setConversationId("terminar-paciente");
 						abresala.setReplyWith("terminar"
 								+ System.currentTimeMillis());
@@ -250,7 +227,7 @@ public class AgentePaciente extends Agent {
 						sintoma.remove(0);
 						
 						if(Thread.currentThread().getState() == Thread.State.RUNNABLE)
-							step = 3;
+							step = 2;
 
 					} else {
 						System.out
@@ -270,7 +247,7 @@ public class AgentePaciente extends Agent {
 		}
 
 		public boolean done() {
-			if (step == 3 && procura.size() == 0) {
+			if (step == 2 && procura.size() == 0) {
 				myAgent.doDelete();
 				return true;
 			} else
