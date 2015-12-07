@@ -13,6 +13,7 @@ import jade.lang.acl.MessageTemplate;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -53,11 +54,28 @@ public class AgenteRecursos extends Agent {
 		
 		addBehaviour( new CheckUp()); 
 		
+		String currentDirFile = System.getProperty("user.dir");
+		
+		File file = new File(currentDirFile + "\\" + "resources" +  "\\" + this.getLocalName() + ".txt");
+		
+		
+		// if file doesnt exists, then create it
+		if (!file.exists() && !this.getLocalName().equals("Triagem")) {
+			try {
+				file.createNewFile();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+			
 		// Add the behaviour serving queries from buyer agents
 		//System.out.print(this.getLocalName().toString());
 		//if(this.getLocalName().toString() != "Triagem")
-		if(!this.getLocalName().toString().equals("Triagem"))
-			addBehaviour(new OfferRequestsServer());
+			
+			if(!this.getLocalName().toString().equals("Triagem"))
+				addBehaviour(new OfferRequestsServer());
 
 	}
 
@@ -206,38 +224,39 @@ public class AgenteRecursos extends Agent {
 			case 0:
 
 				stringBuffer = Readfile(myAgent.getLocalName().toString(), queue);
-
-				//print dos valores da queue
-				   Iterator it = queue.entrySet().iterator();
-				    while (it.hasNext()) {
-				        Map.Entry pair = (Map.Entry)it.next();
-				        System.out.println(pair.getKey() + " = " + pair.getValue());
-				    }
-				    
-				    //Float min = Collections.min(queue.values());
-				    
-				    //System.out.printf(" MINIMOOOOOOOOOO " + min);
-				    
-				System.out.println("CRLLLL :  " + queue.size());
+				Float min = 1f;
+				// print dos valores da queue
+				/*
+				 * Iterator it = queue.entrySet().iterator(); while
+				 * (it.hasNext()) { Map.Entry pair = (Map.Entry)it.next();
+				 * System.out.println(pair.getKey() + " = " + pair.getValue());
+				 * }
+				 */
 				
+				// escolhe o valor minimo
+				if (stringBuffer.length() != 0) {
+					min = Collections.min(queue.values());
+					System.out.printf(" MINIMOOOOOOOOOO " + min);
+				}
+
 				mt = MessageTemplate.MatchPerformative(ACLMessage.CFP);
 				ACLMessage msg = myAgent.receive(mt);
-				if (msg != null && msg.getConversationId() == "marcar-recurso") {
+				if (msg != null && msg.getConversationId() == "marcar-recurso" && min != 1) {
 					// CFP Message received. Process it
 					ACLMessage reply = msg.createReply();
 
 					reply.setPerformative(ACLMessage.PROPOSE);
 					reply.setContent("Sala marcada");
-					reply.setReplyWith("marcar"+ System.currentTimeMillis());
+					reply.setReplyWith("marcar" + System.currentTimeMillis());
 					step = 1;
-						myAgent.send(reply);
+					myAgent.send(reply);
 
-					}
-				
-				 else {
+				}
+
+				else {
 					block();
 				}
-				
+
 				break;
 
 			case 1:
@@ -267,7 +286,7 @@ public class AgenteRecursos extends Agent {
 			case 2:
 				
 				ACLMessage order = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
-				System.out.print(String.valueOf(queue.size()));
+				//System.out.print(String.valueOf(queue.size()));
 				order.addReceiver(paciente1);
 				order.setContent("accepted");
 				order.setConversationId("concluir");
@@ -284,7 +303,7 @@ public class AgenteRecursos extends Agent {
 				ACLMessage theend = myAgent.receive(mt);
 
 				if (theend != null) {
-
+					
 					String resposta = theend.getContent().toString();
 					System.out.println("Foi libertada a sala! " + resposta);
 					step = 0;
