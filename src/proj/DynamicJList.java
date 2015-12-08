@@ -6,6 +6,8 @@ import java.awt.event.*;
 import java.util.*;
 
 class DynamicJList extends JFrame {
+	private static final long serialVersionUID = 1L;
+	
 	JMenuBar mbar;
 	JMenu menu;
 	JTextField jf;

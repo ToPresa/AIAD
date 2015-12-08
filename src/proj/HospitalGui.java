@@ -20,6 +20,7 @@ import javax.swing.JTextField;
 import javax.swing.border.TitledBorder;
 
 public class HospitalGui extends JFrame {
+	private static final long serialVersionUID = 1L;
 
 	private AgenteHospital myAgent;
 

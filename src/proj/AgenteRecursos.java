@@ -18,7 +18,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.security.KeyStore.Entry;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -236,10 +235,7 @@ public class AgenteRecursos extends Agent {
 	public static void removerDoFicheiro(String lineToRemove, String Sala) {	
 			
 		  try {
-			  
-
-			  StringBuffer stringBuffer = null;
-					
+			  					
 			  String currentDirFile = System.getProperty("user.dir");
 			  File inFile = new File(currentDirFile + "\\" + "resources" +  "\\" + Sala + ".txt");
 
@@ -294,7 +290,6 @@ public class AgenteRecursos extends Agent {
 	private class OfferRequestsServer extends CyclicBehaviour {
 		
 		private static final long serialVersionUID = 1L;
-		MessageTemplate mt;
 		private int step = 0;
 		StringBuffer stringBuffer;
 		Float min =2f;

@@ -1,27 +1,17 @@
  package proj;
 
-import jade.core.AID;
 import jade.core.Agent;
-import jade.core.Profile;
-import jade.core.ProfileImpl;
 import jade.core.behaviours.*;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
-import jade.domain.FIPAAgentManagement.DFAgentDescription;
-import jade.domain.FIPAAgentManagement.ServiceDescription;
-import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
 import jade.wrapper.AgentController;
 import jade.wrapper.ContainerController;
 import jade.wrapper.StaleProxyException;
 
-import java.nio.file.Files;
-import java.util.*;
-
 public class AgenteHospital extends Agent {
-	
+		private static final long serialVersionUID = 1L;
 		private HospitalGui myGui;
-		private RecursosGui myGui2;
+		//private RecursosGui myGui2;
 				
 		// Put agent initializations here
 		protected void setup() {	
@@ -32,10 +22,11 @@ public class AgenteHospital extends Agent {
 			
 			//myGui2 = new RecursosGui();				
 		}
-		
-		
+				
 		public void updateHospital(final String sala) {
 			addBehaviour(new OneShotBehaviour() {
+				private static final long serialVersionUID = 1L;
+
 				public void action() {
 					
 					ContainerController cc = getContainerController();
