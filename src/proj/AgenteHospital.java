@@ -21,13 +21,16 @@ import java.util.*;
 public class AgenteHospital extends Agent {
 	
 		private HospitalGui myGui;
-		
+		private RecursosGui myGui2;
+				
 		// Put agent initializations here
-		protected void setup() {
+		protected void setup() {	
+			
 			// Create and show the GUI
 			myGui = new HospitalGui(this);
 			myGui.showGui();
-				
+			
+			//myGui2 = new RecursosGui();				
 		}
 		
 		
@@ -46,6 +49,7 @@ public class AgenteHospital extends Agent {
 						e.printStackTrace();
 					}		
 					
+					//list.adiciona(sala);
 					System.out.println(sala + " adicionada!");
 				}
 			});
@@ -62,7 +66,9 @@ public class AgenteHospital extends Agent {
 	
 			// Close the GUI
 			myGui.dispose();
+						
 			// Printout a dismissal message
 			System.out.println("Hospital " + getAID().getLocalName() + " fechou!");
 		}
+
 }

@@ -19,6 +19,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.KeyStore.Entry;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class AgenteRecursos extends Agent {
@@ -33,12 +34,17 @@ public class AgenteRecursos extends Agent {
 	String teste = "";
 	List<Float> estados;
 	HashMap<String, Float> queue;
+	DynamicJList List; 
 	
 	// Put agent initializations here
 	protected void setup() {
 		paciente1 = new AID();
 		queue = new HashMap <String, Float>();
 		estados = new ArrayList<Float>();
+		
+		List = new DynamicJList();
+		List.setTitle(this.getLocalName().toString());
+		
 		// Registar o serviço da sala nas "paginas-amarelas"
 		DFAgentDescription dfd = new DFAgentDescription();
 		dfd.setName(getAID());
@@ -53,7 +59,8 @@ public class AgenteRecursos extends Agent {
 			fe.printStackTrace();
 		}
 		
-		addBehaviour( new CheckUp()); 
+		if(this.getLocalName().toString().equals("Triagem"))
+			addBehaviour( new CheckUp()); 
 		
 		String currentDirFile = System.getProperty("user.dir");
 		
@@ -98,10 +105,10 @@ public class AgenteRecursos extends Agent {
 		System.out.println("Sala " + getAID().getLocalName() + " fechou!");
 	}
 
-
 	private class CheckUp extends CyclicBehaviour {
 
 		private static final long serialVersionUID = 1L;
+		String timeStamp;
 		
 		public void action() {
 			MessageTemplate mt = MessageTemplate
@@ -115,15 +122,23 @@ public class AgenteRecursos extends Agent {
 				ACLMessage info = msg.createReply();
 
 				String[] conjuntoSintomas = sintoma.split(";");
-
+				
 				if (msg.getConversationId() == "marcar-checkup") {
 					
-					float estado = checkUp(conjuntoSintomas);
+					float estado = checkUp(conjuntoSintomas[0]);
 					info.setPerformative(ACLMessage.INFORM);
 					info.setContent(Float.toString(estado));
 					
-					writeFile(conjuntoSintomas[1].toString(), msg.getSender().toString(), estado);
+					String salanome = conjuntoSintomas[1].substring(1, conjuntoSintomas[1].length()-1);
+					//System.out.println("CRASDAS:  " + salanome);
+					String[] salasf = salanome.split(", ");
 					
+					for(int i=0; i< salasf.length; i++) {						
+						writeFile(salasf[i].toString(), msg.getSender().toString(), estado);
+					}
+					
+					timeStamp = new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime());
+					List.adiciona(msg.getSender().getLocalName().trim() + "   " + estado + "   " + timeStamp);
 					myAgent.send(info);
 
 				}
@@ -277,16 +292,18 @@ public class AgenteRecursos extends Agent {
 	}
 	
 	private class OfferRequestsServer extends CyclicBehaviour {
+		
 		private static final long serialVersionUID = 1L;
 		MessageTemplate mt;
 		private int step = 0;
 		StringBuffer stringBuffer;
-		Float min = 1f;
+		Float min =2f;
 		String key = "";
 		AID pac = null;
+		String timeStamp;
 		
 		public void action() {
-
+			
 			switch (step) {
 
 			case 0:
@@ -296,6 +313,7 @@ public class AgenteRecursos extends Agent {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				
 				boolean advance = false;
 				ACLMessage marcaconsulta = new ACLMessage(ACLMessage.INFORM);
 				stringBuffer = Readfile(myAgent.getLocalName().toString(), queue);
@@ -307,6 +325,11 @@ public class AgenteRecursos extends Agent {
 					key = getKeyFromValue(queue, min);
 					//System.out.println("CRLLLLL          " + min + " ---" + key);
 				}
+				else {
+					//System.out.println("BREAAKKKK");
+					break;
+				}
+				
 				
 				DFAgentDescription template = new DFAgentDescription();
 				ServiceDescription sd = new ServiceDescription();
@@ -320,7 +343,7 @@ public class AgenteRecursos extends Agent {
 					for (int i = 0; i < result.length; ++i) {
 						if(result[i].getName().toString().equals(key)){
 							pac = result[i].getName();
-							System.out.println("OH CRL: " + pac.toString());
+							//System.out.println("OH CRL: " + pac.toString());
 							advance = true;
 						}
 							
@@ -351,7 +374,7 @@ public class AgenteRecursos extends Agent {
 					if (reply.getPerformative() == ACLMessage.INFORM && reply.getConversationId() == "alocar-recurso") {
 				
 				ACLMessage order = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
-				System.out.print("Passei no 1");
+				//System.out.print("Passei no 1");
 				order.addReceiver(pac);
 				order.setContent("concluido");
 				order.setConversationId("concluir");
@@ -371,7 +394,7 @@ public class AgenteRecursos extends Agent {
 				
 				
 			case 2:
-				
+		
 				mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
 				ACLMessage theend = myAgent.receive(mt);
 
@@ -382,6 +405,8 @@ public class AgenteRecursos extends Agent {
 					removerDoFicheiro(pac.getName().toString(), myAgent.getLocalName().toString());
 					queue.values().remove(Float.valueOf(theend.getContent().toString()));
 					//System.out.println("QUEUEEE FI: " + queue.size() + " -- " + pac.getName().toString());
+					timeStamp = new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime());
+					List.adiciona(pac.getLocalName().toString() + "   " + timeStamp);
 					step = 0;
 				}
 
@@ -395,22 +420,29 @@ public class AgenteRecursos extends Agent {
 		}
 	} // End of inner class OfferRequestsServer
 
+	public float checkUp(String sintomas) {
+		
+		String salanome = sintomas.substring(1, sintomas.length()-1);
 
-	public float checkUp(String[] sintomas) {
-
+		//System.out.println("CRRasdasdsaCR " + salanome);
+		String[] sintoma = salanome.split(", ");
+		//System.out.println("CRRCR " + sintomas);
+		Random rand = new Random();
 		float estado = 1;
-
-		for (int i = 0; i < sintomas.length; i++) {
-			switch (sintomas[i]) {
+		float valor=0;
+		for (int i = 0; i < sintoma.length; i++) {
+			switch (sintoma[i]) {
 
 			case "o":
-				estado -= Math.random();
+				valor = (rand.nextFloat()*(0.4f-0.1f)+0.1f)+0.05f;
+				estado -= valor; 
 				break;
 			case "u":
 				estado -= 0.1;
 				break;
 			case "p":
-				estado -= 0.2;
+				valor = (rand.nextFloat()*(0.4f-0.1f)+0.1f)+0.05f;
+				estado += valor;
 				break;
 			case "or":
 				estado -= 0.4;

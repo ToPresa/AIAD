@@ -114,7 +114,7 @@ public class AgentePaciente extends Agent {
 						cfp.addReceiver(recursos[i]);
 						
 				}
-				cfp.setContent(sintoma.get(0) + ";" + procura.get(0));
+				cfp.setContent(sintoma.toString() + ";" + procura.toString());
 				cfp.setConversationId("marcar-checkup");
 				cfp.setReplyWith("cfp" + System.currentTimeMillis()); // Unique
 																		// value
@@ -163,25 +163,25 @@ public class AgentePaciente extends Agent {
 
 	private class RequestPerformer extends Behaviour {
 		private static final long serialVersionUID = 1L;
-		private MessageTemplate mt; // The template to receive replies
 		private int step = 0;
 
 		public void action() {
 			switch (step) {
 			
 			case 0:
+				step = 0;
 				// Receive all proposals/refusals from Hospital agents
 				MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
 				ACLMessage reply = myAgent.receive(mt);
 				
 				ACLMessage leiloar = new ACLMessage(ACLMessage.INFORM);
-								
+				//System.out.println("Case 0");
 				if (reply != null) {
 					// Reply received
 					if (reply.getPerformative() == ACLMessage.INFORM && reply.getConversationId() == "marcar-recurso") {
 
 						leiloar.addReceiver(reply.getSender());
-						System.out.println("OLA!!!!!");
+						//System.out.println("OLA!!!!!");
 						
 						leiloar.setContent("Atendido");
 						leiloar.setConversationId("alocar-recurso");
@@ -202,6 +202,15 @@ public class AgentePaciente extends Agent {
 				
 			case 1:
 				// Receive the purchase order reply
+				//System.out.println("Case 1");
+				
+				try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
 				MessageTemplate mt2 = MessageTemplate.MatchPerformative(ACLMessage.ACCEPT_PROPOSAL);
 				
 				ACLMessage abresala = new ACLMessage(ACLMessage.INFORM);
@@ -223,10 +232,19 @@ public class AgentePaciente extends Agent {
 												
 						myAgent.send(abresala);
 						
-						procura.remove(0);
-						sintoma.remove(0);
+						//for(int i = 0; i < procura.size(); i++) {
+						//	System.out.println(procura.get(i));
+						//}
 						
-						if(Thread.currentThread().getState() == Thread.State.RUNNABLE)
+						int l = procura.indexOf(reply2.getSender().getLocalName());
+						System.out.println("LLLL CRLLLL:   " + l);
+						if(l>=0)
+							procura.remove(l);
+						
+						//sintoma.remove(0);
+						
+						
+						if(Thread.currentThread().getState() != Thread.State.BLOCKED)
 							step = 2;
 
 					} else {
@@ -238,9 +256,6 @@ public class AgentePaciente extends Agent {
 				} else {
 					block();
 				}
-				break;
-				
-			case 3:
 				break;
 
 			}
@@ -269,7 +284,7 @@ public class AgentePaciente extends Agent {
 			
 		case "p":
 			
-			procura.add("Urgência");
+			procura.add("Pediatria");
 			break;
 			
 		case "i":
