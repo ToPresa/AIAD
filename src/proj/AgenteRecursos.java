@@ -18,6 +18,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -256,9 +258,9 @@ public class AgenteRecursos extends Agent {
 		      //Read from the original file and write to the new
 		      //unless content matches data to be removed.
 		      while ((line = br.readLine()) != null) {
-
+		    	  
+		    	System.out.print("OLHAAALINEEE :" + line);  
 		        if (!line.substring(25, 25+lineToRemove.length()).trim().equals(lineToRemove)) {
-		        	
 		        	pw.println(line);
 		        	pw.flush();
 		        }
@@ -287,6 +289,19 @@ public class AgenteRecursos extends Agent {
 		
 	}
 	
+	public static void atualizarEstado(String EstadoAtual, String NovoEstado) throws IOException{
+		
+		String dirName = System.getProperty("user.dir");
+		File dir = new File(dirName + "\\" + "resources" +  "\\");
+		File[] files = dir.listFiles();
+		for (File file : files) {
+			String content = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+			System.out.print(EstadoAtual + " ---- " + NovoEstado);
+			content = content.replaceAll(EstadoAtual, NovoEstado);
+			Files.write(file.toPath(), content.getBytes(StandardCharsets.UTF_8));
+		}
+	}
+	
 	private class OfferRequestsServer extends CyclicBehaviour {
 		
 		private static final long serialVersionUID = 1L;
@@ -295,6 +310,7 @@ public class AgenteRecursos extends Agent {
 		Float min =2f;
 		String key = "";
 		AID pac = null;
+		float novo;
 		String timeStamp;
 		
 		public void action() {
@@ -368,10 +384,21 @@ public class AgenteRecursos extends Agent {
 				if(reply != null){
 					if (reply.getPerformative() == ACLMessage.INFORM && reply.getConversationId() == "alocar-recurso") {
 				
+				Random rand = new Random();
+				novo= (rand.nextFloat()*(2f-1)+1f);
+				removerDoFicheiro(pac.getName().toString(), myAgent.getLocalName().toString());
+				queue.values().remove(Float.valueOf(reply.getContent().toString()));
+				
+				try {
+					atualizarEstado(reply.getContent().trim(), String.valueOf(novo));
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+						
 				ACLMessage order = new ACLMessage(ACLMessage.ACCEPT_PROPOSAL);
-				//System.out.print("Passei no 1");
 				order.addReceiver(pac);
-				order.setContent("concluido");
+				order.setContent(String.valueOf(novo));
 				order.setConversationId("concluir");
 				order.setReplyWith("concluir" + System.currentTimeMillis());
 				
@@ -397,8 +424,7 @@ public class AgenteRecursos extends Agent {
 					
 					String resposta = theend.getContent().toString();
 					System.out.println("Foi libertada a sala! " + resposta + " --- " + pac.getLocalName() + "   ---  " + myAgent.getLocalName().toString());
-					removerDoFicheiro(pac.getName().toString(), myAgent.getLocalName().toString());
-					queue.values().remove(Float.valueOf(theend.getContent().toString()));
+				
 					//System.out.println("QUEUEEE FI: " + queue.size() + " -- " + pac.getName().toString());
 					timeStamp = new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime());
 					List.adiciona(pac.getLocalName().toString() + "   " + timeStamp);

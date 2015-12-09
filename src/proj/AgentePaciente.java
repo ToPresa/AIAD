@@ -187,6 +187,7 @@ public class AgentePaciente extends Agent {
 						leiloar.setConversationId("alocar-recurso");
 						leiloar.setReplyWith("alocar"
 								+ System.currentTimeMillis());
+						leiloar.setContent(String.valueOf(estado));
 						
 						myAgent.send(leiloar);
 						step = 1;
@@ -223,6 +224,8 @@ public class AgentePaciente extends Agent {
 							&& reply2.getConversationId() == "concluir") {
 						
 						System.out.println(sintoma.get(0).toString() + " tratado com sucesso!");
+						
+						estado = Float.valueOf(reply2.getContent());
 						
 						abresala.addReceiver(reply2.getSender());
 						abresala.setContent(Float.toString(estado));
