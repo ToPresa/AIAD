@@ -35,7 +35,7 @@ public class HospitalGui extends JFrame {
 
 		myAgent = a;
 		combo = new JComboBox((new Object[] {"Oncologia", "Pediatria", "Urgência", "Ortopedia", "Genecologia",
-				"Urologia", "Medicina Dentária", "Cirurgia", "Dermatologia" }));
+				"Medicina Dentária"}));
 		JPanel p = new JPanel();
 		p.setPreferredSize(new Dimension(400, 250));
 		p.add(combo);

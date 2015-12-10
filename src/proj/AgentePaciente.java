@@ -175,13 +175,11 @@ public class AgentePaciente extends Agent {
 				ACLMessage reply = myAgent.receive(mt);
 				
 				ACLMessage leiloar = new ACLMessage(ACLMessage.INFORM);
-				//System.out.println("Case 0");
 				if (reply != null) {
 					// Reply received
 					if (reply.getPerformative() == ACLMessage.INFORM && reply.getConversationId() == "marcar-recurso") {
 
 						leiloar.addReceiver(reply.getSender());
-						//System.out.println("OLA!!!!!");
 						
 						leiloar.setContent("Atendido");
 						leiloar.setConversationId("alocar-recurso");
@@ -223,33 +221,45 @@ public class AgentePaciente extends Agent {
 					if (reply2.getPerformative() == ACLMessage.ACCEPT_PROPOSAL
 							&& reply2.getConversationId() == "concluir") {
 						
-						System.out.println(sintoma.get(0).toString() + " tratado com sucesso!");
+						String estadoos="";
+						estadoos = reply2.getContent();
+						String[] estados = estadoos.split(";");
 						
-						estado = Float.valueOf(reply2.getContent());
+						estado = Float.valueOf(estados[0]); 
 						
-						abresala.addReceiver(reply2.getSender());
-						abresala.setContent(Float.toString(estado));
-						abresala.setConversationId("terminar-paciente");
-						abresala.setReplyWith("terminar"
-								+ System.currentTimeMillis());
-												
-						myAgent.send(abresala);
-						
-						//for(int i = 0; i < procura.size(); i++) {
-						//	System.out.println(procura.get(i));
-						//}
-						
-						int l = procura.indexOf(reply2.getSender().getLocalName());
-						System.out.println("LLLL CRLLLL:   " + l);
-						if(l>=0)
-							procura.remove(l);
-						
-						//sintoma.remove(0);
-						
-						
-						if(Thread.currentThread().getState() != Thread.State.BLOCKED)
-							step = 2;
-
+						System.out.println("ESTADO: " + String.valueOf(estado) + estados[1]);
+						if(Float.valueOf(estado).equals(0.0f)){
+							System.out.println("O meu estado atingiu 0, morri! :,(");
+							procura.clear();
+						}
+						else if(Float.valueOf(estado).equals(1.0f)){
+							System.out.println("Estou totalmente curado! :)");
+							procura.clear();
+						}
+						else{
+							System.out.println(sintoma.get(0).toString() + " tratado com sucesso!");
+							
+							if(estados[1].equals("melhorou")){
+								
+							int l = procura.indexOf(reply2.getSender().getLocalName());
+							//System.out.println("LLLL CRLLLL:   " + l);
+							if(l>=0)
+								procura.remove(l);
+							}
+							}
+							
+							abresala.addReceiver(reply2.getSender());
+							abresala.setContent(Float.toString(estado));
+							abresala.setConversationId("terminar-paciente");
+							abresala.setReplyWith("terminar"
+									+ System.currentTimeMillis());
+													
+							myAgent.send(abresala);
+							
+							if(Thread.currentThread().getState() != Thread.State.BLOCKED)
+								step = 2;
+				
+					
 					} else {
 						System.out
 								.println("Não foi possivel tratar o seu sintoma!");
@@ -283,16 +293,28 @@ public class AgentePaciente extends Agent {
 			
 			procura.add("Oncologia");
 			break;
-			
-			
+		
 		case "p":
 			
 			procura.add("Pediatria");
 			break;
 			
-		case "i":
-			procura.add("Pediatria");
+		case "r":
+			procura.add("Ortopedia");
 			break;
+			
+		case "u":
+			procura.add("Urgência");
+		break;
+		
+		case "g":
+			procura.add("Genecologia");
+		break;
+		
+		case "d":
+			procura.add("Medicina Dentária");
+		break;
+		
 		}
 		}
 		//return procura;
@@ -300,3 +322,4 @@ public class AgentePaciente extends Agent {
 	}
 
 }
+
