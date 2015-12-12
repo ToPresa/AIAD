@@ -14,10 +14,12 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
@@ -34,13 +36,15 @@ public class AgenteRecursos extends Agent {
 	float var;
 	String teste = "";
 	List<Float> estados;
-	HashMap<String, Float> queue;
+	HashMap<String, Float> queue, queue2;
 	DynamicJList List;
+	static List<String> linhas;
 
 	// Put agent initializations here
 	protected void setup() {
 		paciente1 = new AID();
 		queue = new HashMap<String, Float>();
+		queue2 = new HashMap<String, Float>();
 		estados = new ArrayList<Float>();
 
 		List = new DynamicJList();
@@ -134,7 +138,7 @@ public class AgenteRecursos extends Agent {
 							conjuntoSintomas[1].length() - 1);
 					// System.out.println("CRASDAS:  " + salanome);
 					String[] salasf = salanome.split(", ");
-
+									
 					for (int i = 0; i < salasf.length; i++) {
 						writeFile(salasf[i].toString(), msg.getSender()
 								.toString(), estado);
@@ -142,6 +146,10 @@ public class AgenteRecursos extends Agent {
 
 					timeStamp = new SimpleDateFormat("HH:mm:ss")
 							.format(Calendar.getInstance().getTime());
+					
+					//criar txt para todos os pacientes para saber se esta ocupado ou nao
+					writePacientes(msg.getSender().toString(), "livre");
+					
 					List.adiciona(msg.getSender().getLocalName().trim() + "   "
 							+ estado + "   " + timeStamp);
 					myAgent.send(info);
@@ -176,6 +184,33 @@ public class AgenteRecursos extends Agent {
 			bw.write(content);
 			bw.close();
 
+			System.out.println("Writing Done");
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void writePacientes(String Sender, String estado) {
+		try {
+
+			String content = Sender + ";" + estado + "\n";
+			String currentDirFile = System.getProperty("user.dir");
+
+			System.out.print(currentDirFile + "\\" + "pac" + "\\" + "pacientes.txt");
+			File file = new File(currentDirFile + "\\" + "pac" + "\\" + "pacientes.txt");
+
+			// if file doesnt exists, then create it
+			if (!file.exists()) {
+				file.createNewFile();
+			}
+
+	
+			FileWriter fw = new FileWriter(file.getAbsoluteFile(), true);
+			BufferedWriter bw = new BufferedWriter(fw);
+			bw.write(content);
+			bw.close();
+			
 			System.out.println("Writing Done");
 
 		} catch (IOException e) {
@@ -288,6 +323,7 @@ public class AgenteRecursos extends Agent {
 	public static void removerTodos(String lineToRemove) throws IOException {
 
 		String dirName = System.getProperty("user.dir");
+		
 		File dir = new File(dirName + "\\" + "resources" + "\\");
 		File[] files = dir.listFiles();
 		for (File file : files) {
@@ -326,6 +362,37 @@ public class AgenteRecursos extends Agent {
 
 	}
 
+	public static List<String> editaLinha(List<String> lines, String key, String estado) {
+	   
+		List<String> newLines = new ArrayList<String>();
+        for(String line: lines){
+            if(line.contains(key)){
+                String [] vals = line.split(";");
+                newLines.add(vals[0]+";"+String.valueOf(estado));
+            }else{
+                newLines.add(line);
+            }
+
+        }
+        return newLines;
+	}
+	
+	public static List<String> editaLinha2(List<String> lines, String key, String estado) {
+		   
+		List<String> newLines = new ArrayList<String>();
+		
+        for(String line: lines){
+            if(line.substring(25, 25 + key.length()).trim().contains(key)){
+                String [] vals = line.split(";");
+                newLines.add(vals[0]+";"+String.valueOf(estado));
+            }else{
+                newLines.add(line);
+            }
+
+        }
+        return newLines;
+	}
+	
 	public static void atualizarEstado(String EstadoAtual, String NovoEstado)
 			throws IOException {
 
@@ -341,6 +408,47 @@ public class AgenteRecursos extends Agent {
 		}
 	}
 
+	public String Ocupado(String key) {
+		
+		String retorna="";
+		try {
+			
+			String currentDirFile = System.getProperty("user.dir");
+			File inFile = new File(currentDirFile + "\\" + "pac" + "\\" + "pacientes.txt");
+
+			// Construct the new file that will later be renamed to the original
+			// filename.
+			File tempFile = new File(inFile.getAbsolutePath() + ".tmp");
+
+			BufferedReader br = new BufferedReader(new FileReader(
+					currentDirFile + "\\" + "pac" + "\\"  + "pacientes.txt"));
+			PrintWriter pw = new PrintWriter(new FileWriter(tempFile));
+
+			String line = null;
+
+			// Read from the original file and write to the new
+			// unless content matches data to be removed.
+			while ((line = br.readLine()) != null) {
+				
+				String[] coiso = line.split(";");
+				
+				if (coiso[0].equals(key)) {
+					retorna = coiso[1];
+				}
+			}
+			pw.close();
+			br.close();
+
+
+		} catch (FileNotFoundException ex) {
+			ex.printStackTrace();
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+		//System.out.println("CRLLLLLLLLLLLLLLLLLLLL " + retorna);
+		return retorna;
+	}
+	
 	private class OfferRequestsServer extends CyclicBehaviour {
 
 		private static final long serialVersionUID = 1L;
@@ -351,12 +459,14 @@ public class AgenteRecursos extends Agent {
 		AID pac = null;
 		float novo,atual;
 		String timeStamp;
-
+		int lines = 0;
+		
 		public void action() {
 
 			switch (step) {
 
 			case 0:
+			
 				try {
 					Thread.sleep(2000);
 				} catch (InterruptedException e) {
@@ -368,11 +478,42 @@ public class AgenteRecursos extends Agent {
 				ACLMessage marcaconsulta = new ACLMessage(ACLMessage.INFORM);
 				stringBuffer = Readfile(myAgent.getLocalName().toString(),
 						queue);
-
+				queue2 = queue;
+				
+				
+				String currentDirFiles = System.getProperty("user.dir");
+				File ff = new File(currentDirFiles + "\\" + "resources" + "\\" + myAgent.getLocalName().toString() + ".txt");
+				File fff = new File(currentDirFiles + "\\" + "pac" + "\\" + "pacientes.txt");
+				lines=0;
+				if(fff.exists() && !fff.isDirectory()) { 
+					try {
+						
+						BufferedReader reader = new BufferedReader(new FileReader(fff));
+						while (reader.readLine() != null) lines++;
+						reader.close();
+					} catch (IOException e2) {
+						// TODO Auto-generated catch block
+						e2.printStackTrace();
+					}
+				}
+	
+				
 				// escolhe o valor minimo
 				if (stringBuffer.length() != 0) {
-					min = Collections.min(queue.values());
-					key = getKeyFromValue(queue, min);
+							
+						min = Collections.min(queue.values());
+						key = getKeyFromValue(queue, min);
+						
+						
+						if(Ocupado(key) == "ocupado" && lines > 1) {
+							queue2.remove(key);
+							min = Collections.min(queue2.values());
+							key = getKeyFromValue(queue2, min);
+						}
+						else if(Ocupado(key) == "ocupado" && lines <= 1){
+							break;
+						}
+						
 				} else {
 					break;
 				}
@@ -388,6 +529,13 @@ public class AgenteRecursos extends Agent {
 					for (int i = 0; i < result.length; ++i) {
 						if (result[i].getName().toString().equals(key)) {
 							pac = result[i].getName();
+							
+							String currentDirFile = System.getProperty("user.dir");
+							File f = new File(currentDirFile + "\\" + "pac" + "\\" + "pacientes.txt");
+					        linhas = Files.readAllLines(f.toPath(),Charset.defaultCharset());
+					        editaLinha(linhas, key , "ocupado"); // the name and the value you want to modify
+					        Files.write(f.toPath(), editaLinha(linhas, key, "ocupado"), Charset.defaultCharset());
+							
 							advance = true;
 						}
 
@@ -395,6 +543,9 @@ public class AgenteRecursos extends Agent {
 
 				} catch (FIPAException fe) {
 					fe.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 
 				marcaconsulta.addReceiver(pac);
@@ -415,7 +566,8 @@ public class AgenteRecursos extends Agent {
 						.MatchPerformative(ACLMessage.INFORM);
 				ACLMessage reply = myAgent.receive(mt);
 				Random rand = new Random();
-
+				
+				
 				if (reply != null) {
 					if (reply.getPerformative() == ACLMessage.INFORM
 							&& reply.getConversationId() == "alocar-recurso") {
@@ -471,14 +623,15 @@ public class AgenteRecursos extends Agent {
 								+ System.currentTimeMillis());
 
 						myAgent.send(order);
-
+						
 						step = 2;
 
 					}
 				}
 
-				else
+				else {
 					block();
+				}
 
 				break;
 
@@ -489,7 +642,18 @@ public class AgenteRecursos extends Agent {
 
 				if (theend != null
 						&& theend.getConversationId() == "terminar-paciente") {
-
+					
+					String currentDirFile = System.getProperty("user.dir");
+					File f = new File(currentDirFile + "\\" + "pac" + "\\" + "pacientes.txt");
+			        try {
+						linhas = Files.readAllLines(f.toPath(),Charset.defaultCharset());
+						editaLinha2(linhas, pac.getName().toString() , "livre"); 
+				        Files.write(f.toPath(), editaLinha(linhas, pac.getName().toString(), "livre"), Charset.defaultCharset());
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
 					String resposta = theend.getContent().toString();
 					System.out.println("Foi libertada a sala! " + resposta
 							+ " --- " + pac.getLocalName() + "   ---  "
