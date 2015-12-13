@@ -289,35 +289,34 @@ public class AgentePaciente extends Agent {
 			
 		switch(sintoma.get(n)){
 		
-		case "o":
+		case "cancro":
 			
 			procura.add("Oncologia");
 			break;
 		
-		case "p":
+		case "febre":
 			
 			procura.add("Pediatria");
 			break;
 			
-		case "r":
+		case "calos":
 			procura.add("Ortopedia");
 			break;
 			
-		case "u":
+		case "baleado":
 			procura.add("Urgência");
 		break;
 		
-		case "g":
+		case "gravidez":
 			procura.add("Genecologia");
 		break;
 		
-		case "d":
+		case "caries":
 			procura.add("Medicina Dentária");
 		break;
 		
 		}
 		}
-		//return procura;
 		
 	}
 

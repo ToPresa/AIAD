@@ -14,7 +14,6 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -497,16 +496,12 @@ public class AgenteRecursos extends Agent {
 							
 						min = Collections.min(queue.values());
 						key = getKeyFromValue(queue, min);
-						//System.out.println("LINES: " + lines);
-						//System.out.println("KEY :" + key + "O :" + Ocupado(key));
 						if(Ocupado(key).equals("ocupado") && lines > 1) {
-							//System.out.println("OCUPADOFDP");
 							queue2.remove(key);
 							min = Collections.min(queue2.values());
 							key = getKeyFromValue(queue2, min);
 						}
 						else if(Ocupado(key).equals("ocupado") && lines <= 1){
-							System.out.println("SozinhoFDP");
 							break;
 						}
 						
@@ -561,7 +556,6 @@ public class AgenteRecursos extends Agent {
 				MessageTemplate mt = MessageTemplate
 						.MatchPerformative(ACLMessage.INFORM);
 				ACLMessage reply = myAgent.receive(mt);
-				Random rand = new Random();
 				
 				
 				if (reply != null) {
@@ -684,27 +678,27 @@ public class AgenteRecursos extends Agent {
 		for (int i = 0; i < sintoma.length; i++) {
 			switch (sintoma[i]) {
 
-			case "o":
+			case "cancro":
 				valor = (rand.nextFloat() * (0.5f - 0.0f) + 0.0f) + 0.05f;
 				estado -= valor;
 				break;
-			case "r":
+			case "calos":
 				valor = (rand.nextFloat() * (0.1f - 0.0f) + 0.0f) + 0.05f;
 				estado -= valor;
 				break;
-			case "u":
+			case "baleado":
 				valor = (rand.nextFloat() * (0.4f - 0.0f) + 0.0f) + 0.05f;
 				estado -= valor;
 				break;
-			case "g":
+			case "gravidez":
 				valor = (rand.nextFloat() * (0.2f - 0.0f) + 0.0f) + 0.05f;
 				estado -= valor;
 				break;
-			case "d":
+			case "caries":
 				valor = (rand.nextFloat() * (0.1f - 0.0f) + 0.0f) + 0.05f;
 				estado -= valor;
 				break;
-			case "p":
+			case "febre":
 				valor = (rand.nextFloat() * (0.2f - 0.0f) + 0.0f) + 0.05f;
 				estado -= valor;
 				break;
