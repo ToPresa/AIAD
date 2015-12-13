@@ -497,9 +497,11 @@ public class AgenteRecursos extends Agent {
 						min = Collections.min(queue.values());
 						key = getKeyFromValue(queue, min);
 						if(Ocupado(key).equals("ocupado") && lines > 1) {
-							queue2.remove(key);
-							min = Collections.min(queue2.values());
-							key = getKeyFromValue(queue2, min);
+							while(Ocupado(key).equals("ocupado") && queue2.size() > 1) {
+								queue2.remove(key);
+								min = Collections.min(queue2.values());
+								key = getKeyFromValue(queue2, min);
+							}
 						}
 						else if(Ocupado(key).equals("ocupado") && lines <= 1){
 							break;
