@@ -68,11 +68,11 @@ public class AgentePaciente extends Agent {
 					try {
 						DFAgentDescription[] result = DFService.search(myAgent,
 								template);
-						System.out.println("Encontrei estes recursos:");
+						//System.out.println("Encontrei estes recursos:");
 						recursos = new AID[result.length];
 						for (int i = 0; i < result.length; ++i) {
 							recursos[i] = result[i].getName();
-							System.out.println(recursos[i].getName());
+							//System.out.println(recursos[i].getName());
 						}
 					} catch (FIPAException fe) {
 						fe.printStackTrace();
@@ -227,7 +227,7 @@ public class AgentePaciente extends Agent {
 						
 						estado = Float.valueOf(estados[0]); 
 						
-						System.out.println("ESTADO: " + String.valueOf(estado) + estados[1]);
+						//System.out.println("ESTADO: " + String.valueOf(estado) + estados[1]);
 						if(Float.valueOf(estado).equals(0.0f)){
 							System.out.println("O meu estado atingiu 0, morri! :,(");
 							procura.clear();

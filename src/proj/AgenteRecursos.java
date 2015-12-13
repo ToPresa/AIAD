@@ -136,7 +136,6 @@ public class AgenteRecursos extends Agent {
 
 					String salanome = conjuntoSintomas[1].substring(1,
 							conjuntoSintomas[1].length() - 1);
-					// System.out.println("CRASDAS:  " + salanome);
 					String[] salasf = salanome.split(", ");
 									
 					for (int i = 0; i < salasf.length; i++) {
@@ -169,8 +168,7 @@ public class AgenteRecursos extends Agent {
 			String content = Sender + ";" + Estado + "\n";
 			String currentDirFile = System.getProperty("user.dir");
 
-			System.out.print(currentDirFile + "\\" + "resources" + "\\" + Sala
-					+ ".txt");
+			//System.out.print(currentDirFile + "\\" + "resources" + "\\" + Sala+ ".txt");
 			File file = new File(currentDirFile + "\\" + "resources" + "\\"
 					+ Sala + ".txt");
 
@@ -197,7 +195,7 @@ public class AgenteRecursos extends Agent {
 			String content = Sender + ";" + estado + "\n";
 			String currentDirFile = System.getProperty("user.dir");
 
-			System.out.print(currentDirFile + "\\" + "pac" + "\\" + "pacientes.txt");
+			//System.out.print(currentDirFile + "\\" + "pac" + "\\" + "pacientes.txt");
 			File file = new File(currentDirFile + "\\" + "pac" + "\\" + "pacientes.txt");
 
 			// if file doesnt exists, then create it
@@ -402,7 +400,6 @@ public class AgenteRecursos extends Agent {
 		for (File file : files) {
 			String content = new String(Files.readAllBytes(file.toPath()),
 					StandardCharsets.UTF_8);
-			//System.out.println(EstadoAtual + " ---- " + NovoEstado);
 			content = content.replaceAll(EstadoAtual, NovoEstado);
 			Files.write(file.toPath(), content.getBytes(StandardCharsets.UTF_8));
 		}
@@ -445,7 +442,6 @@ public class AgenteRecursos extends Agent {
 		} catch (IOException ex) {
 			ex.printStackTrace();
 		}
-		//System.out.println("CRLLLLLLLLLLLLLLLLLLLL " + retorna);
 		return retorna;
 	}
 	
@@ -476,15 +472,13 @@ public class AgenteRecursos extends Agent {
 
 				boolean advance = false;
 				ACLMessage marcaconsulta = new ACLMessage(ACLMessage.INFORM);
-				stringBuffer = Readfile(myAgent.getLocalName().toString(),
-						queue);
+				stringBuffer = Readfile(myAgent.getLocalName().toString(),queue);
 				queue2 = queue;
 				
-				
 				String currentDirFiles = System.getProperty("user.dir");
-				File ff = new File(currentDirFiles + "\\" + "resources" + "\\" + myAgent.getLocalName().toString() + ".txt");
 				File fff = new File(currentDirFiles + "\\" + "pac" + "\\" + "pacientes.txt");
 				lines=0;
+				
 				if(fff.exists() && !fff.isDirectory()) { 
 					try {
 						
@@ -503,14 +497,16 @@ public class AgenteRecursos extends Agent {
 							
 						min = Collections.min(queue.values());
 						key = getKeyFromValue(queue, min);
-						
-						
-						if(Ocupado(key) == "ocupado" && lines > 1) {
+						//System.out.println("LINES: " + lines);
+						//System.out.println("KEY :" + key + "O :" + Ocupado(key));
+						if(Ocupado(key).equals("ocupado") && lines > 1) {
+							//System.out.println("OCUPADOFDP");
 							queue2.remove(key);
 							min = Collections.min(queue2.values());
 							key = getKeyFromValue(queue2, min);
 						}
-						else if(Ocupado(key) == "ocupado" && lines <= 1){
+						else if(Ocupado(key).equals("ocupado") && lines <= 1){
+							System.out.println("SozinhoFDP");
 							break;
 						}
 						
